@@ -94,10 +94,10 @@ public class PlayerMovement : MonoBehaviour
 
             if (moveDir != Vector3.zero)
             {
-                transform.rotation = Quaternion.Slerp(
+                transform.rotation = Quaternion.RotateTowards(
                     transform.rotation,
                     Quaternion.LookRotation(moveDir),
-                    15f * Time.deltaTime
+                    360f * Time.deltaTime
                 );
             }
 
