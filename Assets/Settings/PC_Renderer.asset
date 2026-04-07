@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca1255b6979694ba4bef2518a039811a, type: 3}
   m_Name: HeightFog
   m_EditorClassIdentifier: Assembly-CSharp::HeightFogFeature
-  m_Active: 0
+  m_Active: 1
   settings:
     fogColor: {r: 0.45, g: 0.47, b: 0.5, a: 1}
     heightFogDensity: 0.5
     fogHeightStart: -1
-    fogHeightEnd: 1
+    fogHeightEnd: 5
     distanceFogDensity: 0.0004
 --- !u!114 &11400000
 MonoBehaviour:

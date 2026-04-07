@@ -5,10 +5,12 @@ public class PlayerAnimator : MonoBehaviour
 {
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private float smoothTime = 0.1f;
+    [SerializeField] private PunchHitbox punchHitbox;
 
     private Animator animator;
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int JumpHash = Animator.StringToHash("Jump");
+    private static readonly int PunchHash = Animator.StringToHash("Punch");
     private float currentSpeed;
     private float speedVelocity;
 
@@ -18,6 +20,9 @@ public class PlayerAnimator : MonoBehaviour
 
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
+
+        if (punchHitbox == null)
+            punchHitbox = GetComponentInChildren<PunchHitbox>();
     }
 
     private void Update()
@@ -37,5 +42,16 @@ public class PlayerAnimator : MonoBehaviour
     public void TriggerJump()
     {
         animator.SetTrigger(JumpHash);
+    }
+
+    public void TriggerPunch()
+    {
+        animator.SetTrigger(PunchHash);
+    }
+
+    // Chiamato dall'Animation Event sul clip Kosher_punch
+    public void OnPunchHit()
+    {
+        punchHitbox?.CheckHit();
     }
 }

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,6 +17,7 @@ public class PlayerMovement : MonoBehaviour
     private bool elevatePlayer;
     private Vector3 velocity;
     private Transform cameraTransform;
+    private float punchCooldown;
 
     private void Awake()
     {
@@ -50,6 +50,13 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void OnPunch(InputValue value)
+    {
+        if (!value.isPressed || punchCooldown > 0f) return;
+        GetComponent<PlayerAnimator>()?.TriggerPunch();
+        punchCooldown = 1f;
+    }
+
     private void OnElevating()
     {
         elevatePlayer = true;
@@ -57,6 +64,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        if (punchCooldown > 0f)
+            punchCooldown -= Time.deltaTime;
+
         HandleGravityAndJump();
         HandleMovement();
     }
