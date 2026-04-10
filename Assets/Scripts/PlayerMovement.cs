@@ -17,7 +17,6 @@ public class PlayerMovement : MonoBehaviour
     private bool elevatePlayer;
     private Vector3 velocity;
     private Transform cameraTransform;
-    private float punchCooldown;
 
     private void Awake()
     {
@@ -34,6 +33,8 @@ public class PlayerMovement : MonoBehaviour
     private void OnRun(InputValue value)
     {
         moveInput = value.Get<Vector2>();
+        if (moveInput.sqrMagnitude > 0.01f)
+            GetComponent<PlayerAnimator>()?.ResetPunch();
     }
 
     private void OnSprint(InputValue value)
@@ -52,9 +53,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnPunch(InputValue value)
     {
-        if (!value.isPressed || punchCooldown > 0f) return;
+        if (!value.isPressed) return;
         GetComponent<PlayerAnimator>()?.TriggerPunch();
-        punchCooldown = 1f;
     }
 
     private void OnElevating()
@@ -64,9 +64,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (punchCooldown > 0f)
-            punchCooldown -= Time.deltaTime;
-
         HandleGravityAndJump();
         HandleMovement();
     }

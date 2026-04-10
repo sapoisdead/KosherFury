@@ -10,9 +10,15 @@ public class PlayerAnimator : MonoBehaviour
     private Animator animator;
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int JumpHash = Animator.StringToHash("Jump");
-    private static readonly int PunchHash = Animator.StringToHash("Punch");
+    private static readonly int PunchRightHash = Animator.StringToHash("Punch_right");
+    private static readonly int PunchLeftHash = Animator.StringToHash("Punch_left");
     private float currentSpeed;
     private float speedVelocity;
+    private bool nextPunchIsLeft;
+    private bool punchQueued;
+
+    private static readonly int PunchRightStateHash = Animator.StringToHash("Punch_Right");
+    private static readonly int PunchLeftStateHash  = Animator.StringToHash("Punch_Left");
 
     private void Awake()
     {
@@ -37,6 +43,17 @@ public class PlayerAnimator : MonoBehaviour
         );
 
         animator.SetFloat(SpeedHash, currentSpeed);
+
+        if (punchQueued && !animator.IsInTransition(0))
+        {
+            var state = animator.GetCurrentAnimatorStateInfo(0);
+            bool inPunch = state.shortNameHash == PunchRightStateHash || state.shortNameHash == PunchLeftStateHash;
+            if (!inPunch || state.normalizedTime >= 0.5f)
+            {
+                punchQueued = false;
+                FirePunch();
+            }
+        }
     }
 
     public void TriggerJump()
@@ -46,11 +63,35 @@ public class PlayerAnimator : MonoBehaviour
 
     public void TriggerPunch()
     {
-        animator.SetTrigger(PunchHash);
+        var state = animator.GetCurrentAnimatorStateInfo(0);
+        bool inPunch = state.shortNameHash == PunchRightStateHash || state.shortNameHash == PunchLeftStateHash;
+
+        if (!inPunch)
+            FirePunch();
+        else
+            punchQueued = true; // una sola coda, lo spam non aggiunge altri
     }
 
-    // Chiamato dall'Animation Event sul clip Kosher_punch
-    public void OnPunchHit()
+    private void FirePunch()
+    {
+        animator.SetTrigger(nextPunchIsLeft ? PunchLeftHash : PunchRightHash);
+        nextPunchIsLeft = !nextPunchIsLeft;
+    }
+
+    public void ResetPunch()
+    {
+        punchQueued = false;
+        nextPunchIsLeft = false;
+        animator.ResetTrigger(PunchRightHash);
+        animator.ResetTrigger(PunchLeftHash);
+    }
+
+    public void OnRightPunchHit()
+    {
+        punchHitbox?.CheckHit();
+    }
+
+    public void OnLeftPunchHit()
     {
         punchHitbox?.CheckHit();
     }
