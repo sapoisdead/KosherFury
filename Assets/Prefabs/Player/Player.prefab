@@ -48,57 +48,6 @@ MonoBehaviour:
   radius: 1
   forwardOffset: 0.8
   heightOffset: 1
---- !u!1 &8948181161504991753
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2403424400513651307}
-  - component: {fileID: 3145035469561513671}
-  m_Layer: 0
-  m_Name: CameraTarget
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2403424400513651307
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8948181161504991753}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.022621155, y: 0.89, z: -3.7704506}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4827261642861027514}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3145035469561513671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8948181161504991753}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89875cdc57c54474a8a74efd9b2a3b5d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineInputAxisController
-  ScanRecursively: 1
-  SuppressInputWhileBlending: 1
-  IgnoreTimeScale: 0
-  m_ControllerManager:
-    Controllers: []
-  PlayerIndex: -1
-  AutoEnableInputs: 1
 --- !u!1001 &5005568046423918417
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -331,6 +280,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 1330755669629619180, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 70.49037
@@ -490,9 +443,6 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2403424400513651307}
     - targetCorrespondingSourceObject: {fileID: 1852576806548013000, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6788445552064093188}
@@ -515,12 +465,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7530283230676706897}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8928365283936523305}
   m_SourcePrefab: {fileID: 100100000, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
---- !u!4 &4827261642861027514 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
-  m_PrefabInstance: {fileID: 5005568046423918417}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5311485930654792192 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
@@ -646,7 +594,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1db0160cb3328483da00110d289c7b21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 100
+  maxHealth: 150
+--- !u!114 &8928365283936523305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5311485930654792192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f22c8aa20c7d74cf1900f74d34f912a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TargetLockSystem
+  lockRange: 20
 --- !u!4 &6684174539494996121 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1852576806548013000, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}

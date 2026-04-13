@@ -23,7 +23,7 @@ AnimatorStateMachine:
     m_Position: {x: 840, y: 200, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7127441700681374372}
-    m_Position: {x: 80, y: 620, z: 0}
+    m_Position: {x: 20, y: 640, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1317823291119109514}
     m_Position: {x: 650, y: 540, z: 0}
@@ -45,7 +45,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Take_hit
-  m_Speed: 2
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 1004710538046481648}
@@ -127,7 +127,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Punch_Right
-  m_Speed: 1.5
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 6053485105192309189}
@@ -278,7 +278,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Punch_Left
-  m_Speed: 1.5
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 5083129636143176188}
