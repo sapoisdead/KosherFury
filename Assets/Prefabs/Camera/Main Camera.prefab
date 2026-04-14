@@ -152,10 +152,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   target: {fileID: 0}
   distance: 4
-  minDistance: 1.5
-  maxDistance: 8
-  sensitivityX: 15
-  sensitivityY: 15
+  sensitivityX: 25
+  sensitivityY: 25
   minVerticalAngle: -20
   maxVerticalAngle: 60
   heightOffset: 1.6
+  lockOnRotationSpeed: 8

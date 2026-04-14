@@ -5,6 +5,8 @@ using UnityEngine.AI;
 public class EnemyAnimator : MonoBehaviour
 {
     [SerializeField] private float smoothTime = 0.1f;
+    [SerializeField] private PunchHitbox punchHitboxRight;
+    [SerializeField] private PunchHitbox punchHitboxLeft;
 
     private Animator animator;
     private NavMeshAgent agent;
@@ -21,12 +23,21 @@ public class EnemyAnimator : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         agent    = GetComponent<NavMeshAgent>();
+
+        if (punchHitboxRight == null || punchHitboxLeft == null)
+        {
+            var hitboxes = GetComponentsInChildren<PunchHitbox>(true);
+            foreach (var hb in hitboxes)
+            {
+                if (hb.name.Contains("Right") && punchHitboxRight == null) punchHitboxRight = hb;
+                else if (hb.name.Contains("Left") && punchHitboxLeft == null) punchHitboxLeft = hb;
+            }
+        }
     }
 
     private void Update()
     {
         float targetSpeed = agent != null ? agent.velocity.magnitude : 0f;
-
         currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref speedVelocity, smoothTime);
         animator.SetFloat(SpeedHash, currentSpeed);
     }
@@ -42,7 +53,6 @@ public class EnemyAnimator : MonoBehaviour
         nextPunchIsLeft = !nextPunchIsLeft;
     }
 
-    // Ricevitori degli animation event del controller condiviso col player
-    private void OnRightPunchHit() { }
-    private void OnLeftPunchHit() { }
+    private void OnRightPunchHit() => punchHitboxRight?.CheckHit();
+    private void OnLeftPunchHit()  => punchHitboxLeft?.CheckHit();
 }

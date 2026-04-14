@@ -3,25 +3,46 @@ using UnityEngine;
 public class PunchHitbox : MonoBehaviour
 {
     [SerializeField] private float damage = 25f;
-    [SerializeField] private float radius = 1.0f;
-    [SerializeField] private float forwardOffset = 0.8f;
-    [SerializeField] private float heightOffset = 1.0f;
+    [SerializeField] private float radius = 0.35f;
+
+    private float _gizmoTimer;
 
     public void CheckHit()
     {
-        Transform root = transform.root;
-        Vector3 center = root.position + root.forward * forwardOffset + Vector3.up * heightOffset;
+        _gizmoTimer = 0.3f;
 
-        Collider[] hits = Physics.OverlapSphere(center, radius);
+        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
         foreach (Collider hit in hits)
         {
-            if (hit.transform.root == root) continue;
+            if (hit.transform.root == transform.root) continue;
 
             Health health = hit.GetComponent<Health>() ?? hit.GetComponentInParent<Health>();
             if (health == null) continue;
 
             health.TakeDamage(damage);
             return;
+        }
+    }
+
+    private void Update()
+    {
+        if (_gizmoTimer > 0f)
+            _gizmoTimer -= Time.deltaTime;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = new Color(1f, 1f, 1f, 0.15f);
+        Gizmos.DrawSphere(transform.position, radius);
+        Gizmos.color = new Color(1f, 1f, 1f, 0.6f);
+        Gizmos.DrawWireSphere(transform.position, radius);
+
+        if (_gizmoTimer > 0f)
+        {
+            Gizmos.color = new Color(1f, 0f, 0f, 0.4f);
+            Gizmos.DrawSphere(transform.position, radius);
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, radius);
         }
     }
 }

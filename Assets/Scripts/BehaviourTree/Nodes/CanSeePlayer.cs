@@ -13,6 +13,7 @@ namespace BehaviourTree
         private float eyeHeight;
         private float alertDuration;
         private float lastSeenTime = -999f;
+        private bool alerted = false;
 
         public CanSeePlayer(Transform enemy, Transform player, float detectionRange, float fieldOfView = 90f, float eyeHeight = 1.5f, float alertDuration = 3f)
         {
@@ -29,13 +30,15 @@ namespace BehaviourTree
             if (CanSee())
             {
                 lastSeenTime = Time.time;
+                alerted = true;
                 return NodeState.Success;
             }
 
-            // Rimane in allerta per alertDuration secondi dopo l'ultimo avvistamento
-            if (Time.time - lastSeenTime <= alertDuration)
+            if (alerted && Time.time - lastSeenTime <= alertDuration)
                 return NodeState.Success;
 
+            // Alert scaduto: resetta lo stato
+            alerted = false;
             return NodeState.Failure;
         }
 
@@ -48,8 +51,10 @@ namespace BehaviourTree
             if (direction.magnitude > detectionRange)
                 return false;
 
+            // Se già in combat usa FOV 360°, altrimenti il FOV normale
+            float effectiveFov = alerted ? 360f : fieldOfView;
             float angle = Vector3.Angle(enemy.forward, direction);
-            if (angle > fieldOfView * 0.5f)
+            if (angle > effectiveFov * 0.5f)
                 return false;
 
             if (Physics.Raycast(eyePosition, direction.normalized, out RaycastHit hit, detectionRange))

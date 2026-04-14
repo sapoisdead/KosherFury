@@ -8,7 +8,6 @@ public class EnemyBT : BehaviourTree.Tree
     [SerializeField] private float detectionRange = 15f;
     [SerializeField] private float abandonRange = 10f;
     [SerializeField] private float attackRange = 2f;
-    [SerializeField] private float attackDamage = 10f;
     [SerializeField] private float attackCooldown = 1.5f;
 
     private NavMeshAgent agent;
@@ -38,8 +37,8 @@ public class EnemyBT : BehaviourTree.Tree
                 new CanSeePlayer(transform, player, detectionRange),
                 new Selector(new List<Node>
                 {
-                    new AttackPlayer(agent, transform, player, enemyAnimator, attackRange, attackDamage, attackCooldown),
-                    new ChasePlayer(agent, player, attackRange)
+                    new AttackPlayer(agent, transform, player, enemyAnimator, attackRange, attackCooldown),
+                    new ChasePlayer(agent, player, 1.2f)
                 })
             }),
 

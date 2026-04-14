@@ -5,7 +5,8 @@ public class PlayerAnimator : MonoBehaviour
 {
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private float smoothTime = 0.1f;
-    [SerializeField] private PunchHitbox punchHitbox;
+    [SerializeField] private PunchHitbox punchHitboxRight;
+    [SerializeField] private PunchHitbox punchHitboxLeft;
 
     private Animator animator;
     private Health health;
@@ -30,8 +31,15 @@ public class PlayerAnimator : MonoBehaviour
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
 
-        if (punchHitbox == null)
-            punchHitbox = GetComponentInChildren<PunchHitbox>();
+        if (punchHitboxRight == null || punchHitboxLeft == null)
+        {
+            var hitboxes = GetComponentsInChildren<PunchHitbox>();
+            foreach (var hb in hitboxes)
+            {
+                if (hb.name.Contains("Right") && punchHitboxRight == null) punchHitboxRight = hb;
+                else if (hb.name.Contains("Left") && punchHitboxLeft == null) punchHitboxLeft = hb;
+            }
+        }
     }
 
     private void Update()
@@ -107,11 +115,11 @@ public class PlayerAnimator : MonoBehaviour
 
     public void OnRightPunchHit()
     {
-        punchHitbox?.CheckHit();
+        punchHitboxRight?.CheckHit();
     }
 
     public void OnLeftPunchHit()
     {
-        punchHitbox?.CheckHit();
+        punchHitboxLeft?.CheckHit();
     }
 }

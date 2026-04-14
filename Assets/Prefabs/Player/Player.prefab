@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6788445552064093188}
   - component: {fileID: 2707512243815934585}
   m_Layer: 0
-  m_Name: PunchHitbox
+  m_Name: PunchHitboxRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -45,9 +45,53 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PunchHitbox
   damage: 25
-  radius: 1
-  forwardOffset: 0.8
-  heightOffset: 1
+  radius: 0.35
+--- !u!1 &7959043072188796569
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2983575691433011023}
+  - component: {fileID: 8069642384571013022}
+  m_Layer: 0
+  m_Name: PunchHitboxLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2983575691433011023
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7959043072188796569}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2254963425090622098}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8069642384571013022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7959043072188796569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1ee6f7daa2748d8adfbb0f6d50ad41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PunchHitbox
+  damage: 25
+  radius: 0.35
 --- !u!1001 &5005568046423918417
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -443,6 +487,9 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 6502182839619065283, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2983575691433011023}
     - targetCorrespondingSourceObject: {fileID: 1852576806548013000, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6788445552064093188}
@@ -469,6 +516,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 8928365283936523305}
   m_SourcePrefab: {fileID: 100100000, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
+--- !u!4 &2254963425090622098 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6502182839619065283, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
+  m_PrefabInstance: {fileID: 5005568046423918417}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5311485930654792192 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f940694de5c9f4144860c0e1b80ddea5, type: 3}
@@ -581,7 +633,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
   playerMovement: {fileID: 0}
   smoothTime: 0.1
-  punchHitbox: {fileID: 2707512243815934585}
+  punchHitboxRight: {fileID: 2707512243815934585}
+  punchHitboxLeft: {fileID: 8069642384571013022}
 --- !u!114 &7530283230676706897
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -594,7 +647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1db0160cb3328483da00110d289c7b21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 150
+  maxHealth: 500
 --- !u!114 &8928365283936523305
 MonoBehaviour:
   m_ObjectHideFlags: 0
