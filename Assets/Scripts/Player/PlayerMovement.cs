@@ -34,6 +34,12 @@ public class PlayerMovement : MonoBehaviour
     {
         moveInput = value.Get<Vector2>();
         if (moveInput.sqrMagnitude > 0.01f)
+
+            //Ciao... stavo buttando un occhio, sicuramente: casha PlayerAnimator in Awake. così eviti di richiamarlo ad ogni input.
+            //In generale Get component sempre in Awake.
+            //Ci sono altre cosine... ma li è proprio da parlarne. Altra cosa, movimenti di camera late update. Movimenti fisica FixedUpdate, non so se stai usando fisica, si? 
+            //In generale il movimento di camera è un po' un "Tralcio di cazzo"... Se usassimo cinemachine? non l ho mai usato per 3d ma secondo me deve avere delle cose easy
+
             GetComponent<PlayerAnimator>()?.ResetPunch();
     }
 
@@ -46,6 +52,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (value.isPressed && controller.isGrounded)
         {
+            //Idem con patate
             GetComponent<PlayerAnimator>()?.TriggerJump();
         }
     }
