@@ -7,9 +7,10 @@ public class PunchHitbox : MonoBehaviour
 
     private float _gizmoTimer;
 
-    public void CheckHit()
+    public void CheckHit(float? overrideDamage = null)
     {
         _gizmoTimer = 0.3f;
+        float dmg = overrideDamage ?? damage;
 
         Collider[] hits = Physics.OverlapSphere(transform.position, radius);
         foreach (Collider hit in hits)
@@ -19,7 +20,7 @@ public class PunchHitbox : MonoBehaviour
             Health health = hit.GetComponent<Health>() ?? hit.GetComponentInParent<Health>();
             if (health == null) continue;
 
-            health.TakeDamage(damage);
+            health.TakeDamage(dmg);
             return;
         }
     }

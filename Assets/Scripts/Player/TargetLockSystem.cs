@@ -15,11 +15,14 @@ public class TargetLockSystem : MonoBehaviour
         Instance = this;
     }
 
+    private void OnLock(InputValue value)
+    {
+        if (value.isPressed)
+            ToggleLock();
+    }
+
     private void Update()
     {
-        if (Mouse.current.rightButton.wasPressedThisFrame)
-            ToggleLock();
-
         // Sblocca se il target è morto o uscito dal range
         if (IsLocked && (!LockedTarget.gameObject.activeSelf ||
             Vector3.Distance(transform.position, LockedTarget.position) > lockRange * 1.5f))
@@ -36,7 +39,7 @@ public class TargetLockSystem : MonoBehaviour
             return;
         }
 
-        Health[] candidates = FindObjectsByType<Health>(FindObjectsSortMode.None);
+        Health[] candidates = FindObjectsByType<Health>(FindObjectsInactive.Exclude);
         float minDist = lockRange;
         Transform nearest = null;
 

@@ -26,6 +26,8 @@ public class GameData
 
     public List<SceneProgress> sceneProgressList = new List<SceneProgress>();
     public List<EnemyData> enemyList = new List<EnemyData>();
+    public List<string> collectedWeapons = new List<string>();
+    public string equippedWeapon;
 
     public Vector3 PlayerPosition => new Vector3(posX, posY, posZ);
 

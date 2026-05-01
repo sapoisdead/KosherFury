@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using System.Collections.Generic;
 using BehaviourTree;
 
-public class EnemyBT : BehaviourTree.Tree
+public class EnemyBT : BehaviourTree.BehaviourTreeBase
 {
     [SerializeField] private float detectionRange = 15f;
     [SerializeField] private float abandonRange = 10f;

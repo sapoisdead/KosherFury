@@ -9,7 +9,7 @@ public class BakeTreeColliders
     [MenuItem("Tools/Create Tree Colliders for Navmesh")]
     public static void Create()
     {
-        Terrain terrain = Object.FindFirstObjectByType<Terrain>();
+        Terrain terrain = Object.FindAnyObjectByType<Terrain>();
         if (terrain == null) { Debug.LogError("Nessun terrain trovato."); return; }
 
         // Rimuovi eventuali collider precedenti

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 482cc286113204b73b2d2a8b084d4cbe, type: 3}
+  m_Name: AbramKnifeData
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: AbramKnife
+  handPrefab: {fileID: 5131146421776131886, guid: c8664b59007504769980dd0e983b234e, type: 3}
+  positionOffset: {x: 0.088, y: -0.005, z: -0.196}
+  rotationOffset: {x: 0, y: 0, z: 0}

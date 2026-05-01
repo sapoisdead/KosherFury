@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace BehaviourTree
 {
-    public abstract class Tree : MonoBehaviour
+    public abstract class BehaviourTreeBase : MonoBehaviour
     {
         private Node root;
 

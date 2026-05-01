@@ -19,9 +19,14 @@ public class PlayerAnimator : MonoBehaviour
     private bool nextPunchIsLeft;
     private bool punchQueued;
 
+    private static readonly int SlashHash           = Animator.StringToHash("Slash");
     private static readonly int PunchRightStateHash = Animator.StringToHash("Punch_Right");
     private static readonly int PunchLeftStateHash  = Animator.StringToHash("Punch_Left");
+    private static readonly int SlashStateHash      = Animator.StringToHash("Slash");
     private static readonly int TakeHitStateHash    = Animator.StringToHash("Take_hit");
+
+    private bool slashQueued;
+    private WeaponManager weaponManager;
 
     private void Awake()
     {
@@ -30,6 +35,8 @@ public class PlayerAnimator : MonoBehaviour
 
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
+
+        weaponManager = GetComponent<WeaponManager>();
 
         if (punchHitboxRight == null || punchHitboxLeft == null)
         {
@@ -57,8 +64,17 @@ public class PlayerAnimator : MonoBehaviour
 
         var currentState = animator.GetCurrentAnimatorStateInfo(0);
         bool inPunchState = currentState.shortNameHash == PunchRightStateHash || currentState.shortNameHash == PunchLeftStateHash;
+        bool inSlashState = currentState.shortNameHash == SlashStateHash;
         bool inHitState   = currentState.shortNameHash == TakeHitStateHash;
-        if (health != null) health.IsInvincible = inPunchState || inHitState;
+        if (health != null) health.IsInvincible = inPunchState || inSlashState || inHitState;
+
+        if (slashQueued && !animator.IsInTransition(0))
+        {
+            var state = animator.GetCurrentAnimatorStateInfo(0);
+            if (state.shortNameHash == TakeHitStateHash) { slashQueued = false; }
+            else if (state.shortNameHash != SlashStateHash || state.normalizedTime >= 0.5f)
+            { slashQueued = false; FireSlash(); }
+        }
 
         if (punchQueued && !animator.IsInTransition(0))
         {
@@ -86,17 +102,44 @@ public class PlayerAnimator : MonoBehaviour
 
     public void TriggerPunch()
     {
-        var state = animator.GetCurrentAnimatorStateInfo(0);
-
-        if (state.shortNameHash == TakeHitStateHash)
+        if (weaponManager != null && weaponManager.CurrentWeapon != null && !weaponManager.CurrentWeapon.isFists)
+        {
+            TriggerSlash();
             return;
+        }
+
+        var state = animator.GetCurrentAnimatorStateInfo(0);
+        if (state.shortNameHash == TakeHitStateHash) return;
 
         bool inPunch = state.shortNameHash == PunchRightStateHash || state.shortNameHash == PunchLeftStateHash;
+        if (!inPunch) FirePunch();
+        else punchQueued = true;
+    }
 
-        if (!inPunch)
-            FirePunch();
-        else
-            punchQueued = true; // una sola coda, lo spam non aggiunge altri
+    private void TriggerSlash()
+    {
+        var state = animator.GetCurrentAnimatorStateInfo(0);
+        if (state.shortNameHash == TakeHitStateHash) return;
+
+        bool inSlash = state.shortNameHash == SlashStateHash;
+        if (!inSlash) FireSlash();
+        else slashQueued = true;
+    }
+
+    private void FireSlash()
+    {
+        animator.SetTrigger(SlashHash);
+    }
+
+    public void OnSlashStart()
+    {
+        Debug.Log("DIOPORCO");
+        GetComponentInChildren<WeaponHitbox>()?.EnableHitbox();
+    }
+
+    public void OnSlashEnd()
+    {
+        GetComponentInChildren<WeaponHitbox>()?.DisableHitbox();
     }
 
     private void FirePunch()
@@ -115,11 +158,13 @@ public class PlayerAnimator : MonoBehaviour
 
     public void OnRightPunchHit()
     {
-        punchHitboxRight?.CheckHit();
+        float? dmg = weaponManager?.CurrentWeapon?.isFists == true ? weaponManager.CurrentWeapon.damage : (float?)null;
+        punchHitboxRight?.CheckHit(dmg);
     }
 
     public void OnLeftPunchHit()
     {
-        punchHitboxLeft?.CheckHit();
+        float? dmg = weaponManager?.CurrentWeapon?.isFists == true ? weaponManager.CurrentWeapon.damage : (float?)null;
+        punchHitboxLeft?.CheckHit(dmg);
     }
 }

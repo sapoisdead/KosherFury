@@ -38,9 +38,21 @@ public class PersistenceManager : MonoBehaviour
         if (MenorahManager.Instance != null)
             currentData.SetCandlesCollected(currentScene, MenorahManager.Instance.CollectedCount);
 
+        // Registra le armi raccolte
+        if (PlayerManager.Instance != null)
+        {
+            WeaponManager wm = PlayerManager.Instance.PlayerTransform?.GetComponent<WeaponManager>();
+            if (wm != null)
+            {
+                var (names, equipped) = wm.GetSaveData();
+                currentData.collectedWeapons = names;
+                currentData.equippedWeapon = equipped;
+            }
+        }
+
         // Registra lo stato dei nemici in scena (vivi e morti)
         currentData.enemyList.Clear();
-        foreach (EnemyID enemy in Object.FindObjectsByType<EnemyID>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (EnemyID enemy in Object.FindObjectsByType<EnemyID>(FindObjectsInactive.Include))
         {
             Health h = enemy.GetComponent<Health>();
             bool alive = enemy.gameObject.activeSelf;
@@ -60,6 +72,13 @@ public class PersistenceManager : MonoBehaviour
 
         string json = File.ReadAllText(SavePath);
         currentData = JsonUtility.FromJson<GameData>(json);
+
+        // Ripristina le armi
+        if (PlayerManager.Instance != null)
+        {
+            WeaponManager wm = PlayerManager.Instance.PlayerTransform?.GetComponent<WeaponManager>();
+            wm?.LoadFromSave(currentData.collectedWeapons, currentData.equippedWeapon);
+        }
 
         return currentData;
     }
