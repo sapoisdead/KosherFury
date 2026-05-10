@@ -9,11 +9,10 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu/MainMenu.unity
     guid: 3f580ca4fc7744312a284b3525f1aa19
   - enabled: 1
-    path: Assets/Scenes/Crypt/Crypt.unity
+    path: Assets/Scenes/Catacombs/Catacombs.unity
     guid: ce37d9c9e20fe418b9bae2066cfcbf8c
   - enabled: 1
     path: Assets/Scenes/Graveyard/Graveyard.unity
     guid: b69dbf47fbdef42eabd9d326904d6178
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  m_UseUCBPForAssetBundles: 0
