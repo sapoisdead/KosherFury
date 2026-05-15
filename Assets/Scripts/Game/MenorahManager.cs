@@ -7,6 +7,7 @@ public class MenorahManager : MonoBehaviour
 
     [SerializeField] private int totalCandles = 7;
     [SerializeField] private GameObject candlesParent; // MenorahCandles
+    public event System.Action OnCandleCountChanged; 
 
     private int collectedCount = 0;
     private bool hasSaved = false;
@@ -49,6 +50,7 @@ public class MenorahManager : MonoBehaviour
     public void OnCandleCollected()
     {
         collectedCount++;
+        OnCandleCountChanged?.Invoke();
     }
 
     public void OnSaved()

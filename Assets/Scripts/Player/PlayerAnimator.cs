@@ -133,13 +133,12 @@ public class PlayerAnimator : MonoBehaviour
 
     public void OnSlashStart()
     {
-        Debug.Log("DIOPORCO");
-        GetComponentInChildren<WeaponHitbox>()?.EnableHitbox();
+        weaponManager?.CurrentHitbox?.EnableHitbox();
     }
 
     public void OnSlashEnd()
     {
-        GetComponentInChildren<WeaponHitbox>()?.DisableHitbox();
+        weaponManager?.CurrentHitbox?.DisableHitbox();
     }
 
     private void FirePunch()

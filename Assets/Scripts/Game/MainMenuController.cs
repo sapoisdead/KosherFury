@@ -18,7 +18,7 @@ public class MainMenuController : MonoBehaviour
     {
         PersistenceManager.Instance?.DeleteSave();
         PlayerManager.Instance?.Spawn();
-        SceneManager.LoadScene("Crypt");
+        SceneManager.LoadScene("Catacombs");
     }
 
     public void OnLoadGame()

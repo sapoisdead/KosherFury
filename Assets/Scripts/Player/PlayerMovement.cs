@@ -11,16 +11,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float gravity = -20f;
 
     private CharacterController controller;
+    private PlayerAnimator animator;
     private Vector2 moveInput;
     private bool isSprinting;
 
     private bool elevatePlayer;
     private Vector3 velocity;
     private Transform cameraTransform;
+    
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
+        animator = GetComponent<PlayerAnimator>();
 
         if (Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -29,18 +32,11 @@ public class PlayerMovement : MonoBehaviour
         Cursor.visible = false;
     }
 
-    // Chiamati da PlayerInput (Send Messages)
-    private void OnRun(InputValue value)
+    private void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
         if (moveInput.sqrMagnitude > 0.01f)
-
-            //Ciao... stavo buttando un occhio, sicuramente: casha PlayerAnimator in Awake. così eviti di richiamarlo ad ogni input.
-            //In generale Get component sempre in Awake.
-            //Ci sono altre cosine... ma li è proprio da parlarne. Altra cosa, movimenti di camera late update. Movimenti fisica FixedUpdate, non so se stai usando fisica, si? 
-            //In generale il movimento di camera è un po' un "Tralcio di cazzo"... Se usassimo cinemachine? non l ho mai usato per 3d ma secondo me deve avere delle cose easy
-
-            GetComponent<PlayerAnimator>()?.ResetPunch();
+            animator.ResetPunch();
     }
 
     private void OnSprint(InputValue value)
@@ -53,14 +49,14 @@ public class PlayerMovement : MonoBehaviour
         if (value.isPressed && controller.isGrounded)
         {
             //Idem con patate
-            GetComponent<PlayerAnimator>()?.TriggerJump();
+            animator.TriggerJump();
         }
     }
 
     private void OnPunch(InputValue value)
     {
         if (!value.isPressed) return;
-        GetComponent<PlayerAnimator>()?.TriggerPunch();
+        animator.TriggerPunch();
     }
 
     private void OnElevating()

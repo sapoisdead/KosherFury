@@ -17,4 +17,5 @@ MonoBehaviour:
   positionOffset: {x: 0.068, y: 0.056, z: 0.07}
   rotationOffset: {x: -27.295, y: 0, z: 0}
   damage: 25
+  iconSprite: {fileID: 21300000, guid: 2ca4ae5b5bd1c4a55986ff3ab285088d, type: 3}
   isFists: 0

@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.coplaydev.coplay": "https://github.com/CoplayDev/coplay-unity-plugin.git#beta",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.cinemachine": "3.1.6",
     "com.unity.collab-proxy": "2.12.4",

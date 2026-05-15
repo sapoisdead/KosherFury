@@ -13,7 +13,10 @@ public class WeaponManager : MonoBehaviour
     private GameObject equippedWeapon;
 
     public WeaponData CurrentWeapon { get; private set; }
+    public WeaponHitbox CurrentHitbox { get; private set; }
     public IReadOnlyList<WeaponData> Inventory => inventory;
+
+    public event System.Action OnWeaponChanged;
 
     private void Start()
     {
@@ -60,6 +63,9 @@ public class WeaponManager : MonoBehaviour
         equippedWeapon = Instantiate(data.handPrefab, rightHandSocket);
         equippedWeapon.transform.localPosition = data.positionOffset;
         equippedWeapon.transform.localRotation = Quaternion.Euler(data.rotationOffset);
+        CurrentHitbox = equippedWeapon.GetComponentInChildren<WeaponHitbox>();
+
+        OnWeaponChanged?.Invoke();
     }
 
     public void Unequip()

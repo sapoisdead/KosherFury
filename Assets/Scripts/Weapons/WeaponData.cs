@@ -8,5 +8,7 @@ public class WeaponData : ScriptableObject
     public Vector3 positionOffset;
     public Vector3 rotationOffset;
     public float damage = 50f;
+    public Sprite iconSprite;
     public bool isFists;
+
 }
