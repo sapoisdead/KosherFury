@@ -37,7 +37,14 @@ public class EnemyBT : BehaviourTree.BehaviourTreeBase
                 new CanSeePlayer(transform, player, detectionRange),
                 new Selector(new List<Node>
                 {
-                    new AttackPlayer(agent, transform, player, enemyAnimator, attackRange, attackCooldown),
+                    // albero legacy (usato solo da Enemy_old.prefab): i parametri del
+                    // ciclo a commit sono derivati dai suoi due campi storici
+                    new AttackPlayer(agent, transform, player, enemyAnimator,
+                                     attackRange, rotationSpeed: 10f, aimTolerance: 25f,
+                                     strikeDistance: attackRange * 0.9f,
+                                     spacingDistance: attackRange * 1.6f,
+                                     commitMin: attackCooldown, commitMax: attackCooldown * 1.7f,
+                                     retreatDuration: 0.7f, closingTimeout: 2.5f),
                     new ChasePlayer(agent, player, 1.2f)
                 })
             }),

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: AbramKnife
   handPrefab: {fileID: 5131146421776131886, guid: c8664b59007504769980dd0e983b234e, type: 3}
-  positionOffset: {x: 0.088, y: -0.005, z: -0.196}
-  rotationOffset: {x: 0, y: 0, z: 0}
+  positionOffset: {x: 0.1499, y: -0.0114, z: -0.0094}
+  rotationOffset: {x: 2.597, y: -70.784, z: -107.902}
   damage: 50
   iconSprite: {fileID: 21300000, guid: 3a6e689402b324972a65f87c4552364c, type: 3}
   isFists: 0

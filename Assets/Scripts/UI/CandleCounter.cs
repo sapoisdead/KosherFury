@@ -9,12 +9,14 @@ public class CandleCounter : MonoBehaviour
 
     void Start()
     {
+        if (MenorahManager.Instance == null) return;
         MenorahManager.Instance.OnCandleCountChanged += UpdateDisplay;
         UpdateDisplay();
     }
 
     void OnDestroy()
     {
+        if (MenorahManager.Instance == null) return;
         MenorahManager.Instance.OnCandleCountChanged -= UpdateDisplay;
     }
 

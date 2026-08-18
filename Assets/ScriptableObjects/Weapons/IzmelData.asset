@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: Izmel
   handPrefab: {fileID: 6076315160575075194, guid: 0b2a11e2a11c146aab81ca698bffb333, type: 3}
-  positionOffset: {x: 0.068, y: 0.056, z: 0.07}
-  rotationOffset: {x: -27.295, y: 0, z: 0}
+  positionOffset: {x: -0.0259, y: 0.0469, z: 0.0463}
+  rotationOffset: {x: -35.061, y: -61.003, z: 17.256}
   damage: 25
   iconSprite: {fileID: 21300000, guid: 2ca4ae5b5bd1c4a55986ff3ab285088d, type: 3}
   isFists: 0

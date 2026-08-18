@@ -154,7 +154,13 @@ MonoBehaviour:
   distance: 4
   sensitivityX: 25
   sensitivityY: 25
+  stickSensitivityX: 120
+  stickSensitivityY: 80
   minVerticalAngle: -20
   maxVerticalAngle: 60
-  heightOffset: 1.6
-  lockOnRotationSpeed: 8
+  defaultPitch: 35
+  heightOffset: 1.8
+  lockOnRotationSpeed: 12
+  lockShoulderOffset: 2.5
+  shoulderBlendSpeed: 6
+  positionSmoothTime: 0.05

@@ -31,7 +31,14 @@ public class PlayerManager : MonoBehaviour
     {
         if (PlayerTransform != null) return; // già spawnato
 
-        GameObject player = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+        // Se la scena dichiara un punto di spawn lo si usa, altrimenti si ricade
+        // sull'origine come prima. L'origine va bene su un piano di prova, ma in una
+        // scena costruita ci finisce dentro l'arredamento.
+        PlayerSpawnPoint spawn = PlayerSpawnPoint.Find();
+        Vector3 spawnPos = spawn != null ? spawn.transform.position : Vector3.zero;
+        Quaternion spawnRot = spawn != null ? spawn.transform.rotation : Quaternion.identity;
+
+        GameObject player = Instantiate(playerPrefab, spawnPos, spawnRot);
         DontDestroyOnLoad(player);
         PlayerTransform = player.transform;
 

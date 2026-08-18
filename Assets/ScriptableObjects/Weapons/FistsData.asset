@@ -16,5 +16,6 @@ MonoBehaviour:
   handPrefab: {fileID: 0}
   positionOffset: {x: 0, y: 0, z: 0}
   rotationOffset: {x: 0, y: 0, z: 0}
-  damage: 10
+  damage: 15
+  iconSprite: {fileID: 0}
   isFists: 1

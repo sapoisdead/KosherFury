@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 
-public class WeaponManager : MonoBehaviour
+public class WeaponManager : MonoBehaviour, IWeaponHolder
 {
     [SerializeField] private Transform rightHandSocket;
     [SerializeField] private WeaponRegistry registry;
@@ -13,7 +13,7 @@ public class WeaponManager : MonoBehaviour
     private GameObject equippedWeapon;
 
     public WeaponData CurrentWeapon { get; private set; }
-    public WeaponHitbox CurrentHitbox { get; private set; }
+    public Hitbox CurrentHitbox { get; private set; }
     public IReadOnlyList<WeaponData> Inventory => inventory;
 
     public event System.Action OnWeaponChanged;
@@ -63,7 +63,7 @@ public class WeaponManager : MonoBehaviour
         equippedWeapon = Instantiate(data.handPrefab, rightHandSocket);
         equippedWeapon.transform.localPosition = data.positionOffset;
         equippedWeapon.transform.localRotation = Quaternion.Euler(data.rotationOffset);
-        CurrentHitbox = equippedWeapon.GetComponentInChildren<WeaponHitbox>();
+        CurrentHitbox = equippedWeapon.GetComponentInChildren<Hitbox>();
 
         OnWeaponChanged?.Invoke();
     }
