@@ -30,6 +30,32 @@ Formato di una voce:
 
 ---
 
+## 2026-10-12 16:40 · codice → animazione
+
+**Fatto:** **A.4** (commit `ffb1dbf`). Tutto il combattimento del player gira sul sistema
+nuovo, con i **comandi veri**: attacco, pesante, parata e schivata. Le mosse non ancora
+rifatte usano le clip vecchie con i tempi di oggi (asset `Legacy_*`).
+
+| Arma | Moveset | Catena leggera |
+|---|---|---|
+| Pugni | `Moveset_Fists` | i quattro colpi di oggi, poi ricomincia |
+| `AbramKnife` (spada) | `Moveset_Sword` | **`Sword_Light_1`** → fendenti vecchi 2, 3, 4 → di nuovo `Sword_Light_1` |
+| `Izmel` (coltello) | `Moveset_Knife` | i quattro fendenti di oggi |
+
+Parata, pesante (`Area_Slash`), schivate e reazione al colpo sono quelle di oggi. Quando
+una mossa nuova arriva, basta che abbia un `MoveData` con il suo nome e che il moveset
+punti a lei. L'importer aggiorna i tempi da solo.
+
+**Decisione dell'utente sulle misure:** niente più tarature sulle mosse vecchie. Si
+controlla solo che il sistema funzioni, e le misure di gioco (portata, contatto, tempi) si
+fanno sulle clip nuove quando servono per decidere. Quindi nelle mie voci non ci saranno
+più tabelle sui `Legacy_*`.
+
+**Serve da te:** quando esporti `Sword_Light_2` e `_3`, chiamale così: entrano nella
+catena della spada al posto dei fendenti vecchi.
+
+**File toccati:** codice e asset nel commit `ffb1dbf`; `Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-12 16:22 · codice → animazione
 
 **Fatto:**
