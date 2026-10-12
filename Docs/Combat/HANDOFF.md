@@ -20,12 +20,145 @@ Formato di una voce:
 | # | Domanda | Per | Aperta da |
 |---|---|---|---|
 | 1 | _(risolta: percorso del `.blend` annotato in `PIPELINE.md`)_ | — | — |
-| 2 | Avatar delle clip nuove: *Copy From Other Avatar* da `Rabbi_rigged` o *Create From This Model*? Decidere al primo import e annotarlo in `PIPELINE.md`. | codice | animazione |
+| 2 | _(risolta 12:45: *Copy From Other Avatar* da `Rabbi_rigged`, annotato in `PIPELINE.md`)_ | — | — |
 | 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
 | 4 | _(risolta 11:35: niente `reachMultiplier`, solo misura)_ | — | — |
 | 5 | _(risolta 11:35: lunge scartato, si rifà nell'`ActionPlayer`)_ | — | — |
+| 6 | Compressione delle clip in Unity: oggi *Keyframe Reduction* (default). Per i colpi propongo **Off**, per coerenza con *Simplify 0* in Blender (un impatto secco non deve essere ammorbidito). Annotarlo in `PIPELINE.md`? | utente | codice |
+| 7 | Nomi delle armi: `AbramKnife` è lunga 1.06 m, `Izmel` 0.54 m. Quale è la spada e quale il coltello? | utente | codice |
+| 8 | Altezza del Rabbi: 1.60 m in Unity contro 1.805 m in Blender (col cappello). Da dove vengono i 20 cm? | animazione, utente | codice |
 
 ---
+
+## 2026-10-12 12:45 · codice → animazione
+
+**Fatto:**
+1. **Voci delle 11:35, eseguite** dopo la conferma dell'utente in chat:
+   - `git revert` di `d9efa2e` (`4000259`) e di `8bf3b91` (`84d533c`); gli `Assets/` sono
+     di nuovo identici a `2447819`;
+   - lunge scartato dal working tree (ne ho una patch nel mio scratchpad, non nel repo);
+   - `_TmpCombatTests/` cancellato. Il progetto compila.
+2. **Misure** di portata, hitbox, armi, altezza e socket: nella mia voce delle 12:38.
+3. **`Sword_Guard_Idle` (voce 12:35):**
+   - importata. Avatar: **Copy From Other Avatar** da `Rabbi_rigged` (domanda 2 chiusa,
+     annotato in `PIPELINE.md`). Nome della take `Armature|Sword_Guard_Idle`, clip rinominata
+     in `Sword_Guard_Idle`;
+   - controlli e misure scritti in `MOVES.md`, sezione Integrazione. In breve: nessun
+     avviso del rig, scala giusta, loop perfetto, dita presenti; **piedi 1.5 cm sotto
+     terra** e **bacino ruotato di 30°**: dimmi se i 30° sono voluti;
+   - anteprima in gioco: in Play Mode ho messo un `AnimatorOverrideController` in memoria
+     che sostituisce la guardia col lock (stato `Idle`) e la posa del layer delle braccia
+     (`Guard_idle`, `Guard_idle_sword`) con la clip nuova, con `Izmel` in mano. Si vede
+     **solo col lock**. Nessun asset modificato: uscendo dal Play Mode torna tutto com'era.
+
+**Serve da te:**
+- Domande 7 e 8 (nomi delle armi, 20 cm di altezza) prima di scalare `REF` e armi in Blender.
+- Il giudizio dell'utente sulla guardia in gioco, quando c'è.
+
+**Prossimo passo mio:** A.2, prototipo `ActionPlayer`, fino al checkpoint.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`, `PIPELINE.md` (avatar);
+`Assets/Art/Rabbi/Animations/Rabbi_anim.fbx.meta` (impostazioni d'import). Commit:
+`4000259`, `84d533c` (revert) e un commit `docs:` con questi file più l'FBX e il JSON
+esportati.
+
+## 2026-10-12 12:38 · codice → animazione
+
+**Fatto:** le misure chieste alle 11:35, 11:45 e 11:50, tutte in Play Mode sul sistema
+vecchio (Arena, nemici spenti, `PlayerInput` spento, passo fisso 1/60 s). L'utente ha
+confermato in chat le decisioni delle 11:35; i revert e lo scarto del lunge li faccio
+subito dopo questa voce.
+
+**Attenzione ai nomi delle armi.** Dalle misure `AbramKnife` è l'arma **lunga** (mesh di
+1.06 m) e `Izmel` quella **corta** (0.54 m). Se in Blender "spada" = `Izmel` e "coltello"
+= `AbramKnife` (come nella voce delle 11:50), le dimensioni sono al contrario rispetto ai
+nomi. Da chiarire con l'utente prima di scalare le armi.
+
+### Portata (misura)
+
+Distanza orizzontale massima fra i **centri** dei due personaggi perché il colpo entri.
+Bersaglio con la capsula del simp (raggio 0.40, altezza 1.80); ricerca binaria fra 0.80 e
+2.40 m, risoluzione ~6 mm. Clip vecchie, nessun lunge, nessun avanzamento. Coltello e
+spada usano le **stesse** clip: cambia solo la lama.
+
+| Mossa | Pugni (`FistsData`) | `AbramKnife` (lunga) | `Izmel` (corta) |
+|---|---|---|---|
+| `Punch_Right` | 1.113 | | |
+| `Kick_Left` | 1.288 | | |
+| `Punch_Left` | 1.194 | | |
+| `Kick_Right` | 1.050 | | |
+| `Slash` | | 1.431 | 1.100 |
+| `Slash_2` | | 1.369 | 1.213 |
+| `Sword_Pierce` | | 1.688 | 1.188 |
+| `Sword_Final` | | 1.738 | 1.325 |
+| `Area_Slash` | | 1.350 | 1.069 |
+
+Per riportarla in Blender: portata − 0.40 (raggio del bersaglio) = distanza dal centro del
+Rabbi a cui la **superficie** della hitbox deve arrivare. Il minimo fisico fra i centri è
+0.80 (le due capsule si toccano). Limite: la ricerca binaria presume che a distanza minore
+si colpisca sempre, e su questi colpi è vero in pratica, ma non l'ho verificato punto per punto.
+
+### Hitbox (misura, dimensioni in world)
+
+| Hitbox | Osso | Forma | Dove sta |
+|---|---|---|---|
+| `PunchHitboxRight` | `mixamorig:RightHand` | sfera r **0.10** | centro a 0.105 m dall'origine dell'osso, lungo l'asse Y dell'osso (verso le dita) |
+| `PunchHitboxLeft` | `mixamorig:LeftHand` | sfera r **0.10** | centro a 0.076 m dall'osso, lungo +Y |
+| `KickHitboxRight` | `mixamorig:RightFoot` | sfera r **0.10** | centro a 0.053 m dall'osso (caviglia), lungo +Y |
+| `KickHitboxLeft` | `mixamorig:LeftFoot` | sfera r **0.10** | centro a 0.052 m dall'osso, lungo +Y |
+| `AbramKnife` › `WeaponHitbox` | figlio dell'arma | capsula r **0.186**, lunga **0.769** (segmento 0.396) | segmento da 0.296 a 0.687 m dall'osso `RightHand`; punta + raggio a **0.873 m** |
+| `Izmel` › `WeaponHitbox` | figlio dell'arma | capsula r **0.053**, lunga **0.282** (segmento 0.176) | segmento da 0.199 a 0.370 m dall'osso `RightHand`; punta + raggio a **0.423 m** |
+
+Nota sui piedi: l'origine di `mixamorig:LeftFoot/RightFoot` è la caviglia, quindi la sfera
+del calcio sta sul collo del piede, non sulla punta.
+
+### Armi impugnate (misura)
+
+| Arma | Mesh in world | Lato lungo | Centro mesh dall'osso `RightHand` | Punto più lontano dall'osso |
+|---|---|---|---|---|
+| `AbramKnife` | 0.357 × 0.148 × 1.058 m | **1.058 m** | 0.331 m | 0.892 m |
+| `Izmel` | 0.076 × 0.076 × 0.544 m | **0.544 m** | 0.162 m | 0.434 m |
+
+(Dimensioni = bounds locali della mesh × scala globale: è la scatola che contiene l'arma
+negli assi del modello, non lungo la lama. Per un'arma dritta il lato lungo è la lunghezza.)
+
+### Rabbi (misura)
+
+- **Altezza in Unity: 1.60 m** in posa di riposo (vertici di `Rabbi_rigged`, il punto più
+  alto è in `Body_low`), 1.57 m nell'idle di gioco. Tu misuri **1.805 m col cappello**:
+  ballano 0.2 m. Nella lista delle mesh in Unity non c'è un cappello separato
+  (`Body_low`, `Bekishe_low`, `Tallit_low`, `Tefillin_low`, `Shoes_low`, …). O il cappello
+  è in Blender ma non nell'FBX `Rabbi_rigged`, o c'è una differenza di scala: va capito
+  prima di animare sulla `REF`.
+- `CharacterController`: altezza 1.80, raggio 0.40, centro y 0.94, skinWidth 0.04.
+- Osso `Head` a 1.01 m da terra, `LeftFoot` a 0.09 m (idle).
+- Avatar in uso: `Rabbi_riggedAvatar` (da `Assets/Art/Rabbi/Meshes/Rabbi_rigged.fbx`,
+  Human, *Create From This Model*). Il controller ha `applyRootMotion` attivo.
+
+### `rightHandSocket` (misura)
+
+- Gerarchia: `Armature › mixamorig:Hips › Spine › Spine1 › Spine2 › RightShoulder ›
+  RightArm › RightForeArm › RightHand › RightHandSocket`.
+- Locale: posizione (0, 0.001, 0), rotazione (352.2°, 347.9°, 0.2°), **scala 0.01**. Le
+  ossa hanno scala globale 100 (unità in cm dentro l'armatura): la scala 0.01 del socket
+  riporta a 1, quindi tutto ciò che sta sotto il socket è in metri.
+- L'arma istanziata sta sotto il socket con `positionOffset` / `rotationOffset` di
+  `WeaponData` come trasformazione locale (`AbramKnife`: pos (0.150, −0.011, −0.009), rot
+  (2.6, −70.8, −107.9); `Izmel`: pos (−0.026, 0.047, 0.046), rot (−35.1, −61.0, 17.3)).
+- **Ricavare gli offset da `Rabbi_grip_<Arma>.fbx` è fattibile**: uno script editor
+  istanzia l'FBX, legge la posa dell'arma rispetto a `mixamorig:RightHand`, la porta nello
+  spazio del socket (inversa della sua trasformazione locale) e scrive i due campi di
+  `WeaponData`. Una condizione: il **pivot** del modello dell'arma nell'FBX dell'impugnatura
+  deve coincidere con quello del prefab `*_Hand` in Unity (oggi i prefab scalano il modello
+  ×80 e ×50 al loro interno). Altrimenti serve anche quella correzione, che posso calcolare
+  se l'arma nell'FBX è lo stesso modello.
+- **Nomi delle clip `Armature|<action>`**: ne tengo conto all'import (si usa la parte dopo `|`).
+
+**Serve da te:** chiarire con l'utente i nomi delle armi (quale è la spada) e la
+differenza di altezza di 0.2 m prima di scalare `REF` e armi.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`. Banco di prova temporaneo in
+`Assets/Scripts/_TmpCombatTests/` (non tracciato, lo cancello adesso).
 
 ## 2026-10-12 12:35 · animazione → codice
 

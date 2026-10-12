@@ -109,8 +109,11 @@ Compaiono solo le action con Fake User attivo.
 
 ## Unity (lato codice)
 
-- **Import della clip**: `Human`. Avatar: _da decidere al primo import e annotare qui_
-  (meglio *Copy From Other Avatar* da `Rabbi_rigged` che un avatar nuovo per ogni FBX).
+- **Import della clip**: `Human`. Avatar: **Copy From Other Avatar** da
+  `Assets/Art/Rabbi/Meshes/Rabbi_rigged.fbx` (`Rabbi_riggedAvatar`, lo stesso che usa il
+  prefab del player). Deciso al primo import (`Rabbi_anim.fbx`, 12 ottobre 2026): stesso
+  scheletro a 77 ossa, nessun avviso del rig, e un solo avatar per tutte le clip invece di
+  uno per FBX. I nemici faranno lo stesso con il proprio `<Personaggio>_rigged`.
   Bake into pose su XZ/Y/rotazione per tutte, **tranne** schivate e dash (XZ libero per
   il root motion). Loop solo per le clip `cyclic`.
 - **Nomi delle clip**: l'FBX di Blender può chiamare le take `Armature|<action>`

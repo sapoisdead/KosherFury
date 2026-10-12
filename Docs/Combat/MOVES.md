@@ -11,7 +11,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
-| `Sword_Guard_Idle` | Rabbi | esportata | codice: primo import di prova |
+| `Sword_Guard_Idle` | Rabbi | esportata | utente: giudizio in gioco (anteprima col lock); poi integrazione col sistema nuovo |
 | `Sword_Light_1` | Rabbi | spec | animazione |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
@@ -39,7 +39,22 @@ specifica, spada verticale vicino al corpo. Da verificare in gioco la leggibilit
   `Pose_Guard_Sword` nella Pose Library.
 
 ### Integrazione
-_vuota_
+Primo import, 12 ottobre 12:41 (sessione codice). Non ancora integrata: il sistema nuovo
+non esiste, l'anteprima in gioco è un override in memoria valido solo in Play Mode.
+- Import: `Human`, avatar copiato da `Rabbi_riggedAvatar`, take `Armature|Sword_Guard_Idle`
+  → clip `Sword_Guard_Idle`, frame 0–72, 1.200 s a 60 fps, loop attivo, bake into pose
+  su XZ/Y/rotazione. Nessun errore né avviso del rig.
+- Misure (campionata su `Rabbi_rigged` in editor):
+  - loop: scarto 0.000 fra primo e ultimo frame su tutte le 130 curve;
+  - dita: 40 curve, tutte con valori;
+  - scala: cima della mesh a 1.54 m (1.60 in posa di riposo), coerente col Rabbi in gioco;
+  - respiro: bacino da 0.519 a 0.510 m fra frame 0 e 36 (−0.9 cm, come da specifica);
+  - piedi: il vertice più basso sta **1.5 cm sotto** il terreno (l'idle di oggi sta 1.2 cm
+    sopra);
+  - orientamento: il bacino è ruotato di **30°** rispetto all'avanti del personaggio
+    (guardia di tre quarti). Se non è voluto, la mossa va girata in Blender.
+- Unity applica la compressione *Keyframe Reduction* di default (curve ridotte al 4.7%).
+  Per un idle va bene; per i colpi proporrò di spegnerla (vedi `HANDOFF.md`).
 
 ---
 
