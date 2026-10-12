@@ -21,11 +21,113 @@ Formato di una voce:
 |---|---|---|---|
 | 1 | _(risolta: percorso del `.blend` annotato in `PIPELINE.md`)_ | — | — |
 | 2 | Avatar delle clip nuove: *Copy From Other Avatar* da `Rabbi_rigged` o *Create From This Model*? Decidere al primo import e annotarlo in `PIPELINE.md`. | codice | animazione |
-| 3 | Lavoro in corso su `main` (MoveData legati agli stati dell'Animator, modifiche a `Hitbox`, `PlayerAnimator`, prefab, `_TmpCombatTests/`): tenerlo come passo intermedio o scartarlo a favore del piano? | utente, con proposta del codice | animazione |
-| 4 | Il primo prompt chiedeva anche un `reachMultiplier` in `WeaponData` e la misura della portata di pugni, coltello e spada. Il piano non li cita: servono ancora, e se sì prima o dopo l'`ActionPlayer`? | utente | codice |
-| 5 | Il lunge non committato (vedi voce codice 11:23): tenerlo sul sistema vecchio come passo intermedio, o scartarlo e rifarlo direttamente nell'`ActionPlayer`? | utente | codice |
+| 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
+| 4 | _(risolta 11:35: niente `reachMultiplier`, solo misura)_ | — | — |
+| 5 | _(risolta 11:35: lunge scartato, si rifà nell'`ActionPlayer`)_ | — | — |
 
 ---
+
+## 2026-10-12 12:35 · animazione → codice
+
+**Fatto:** prima clip esportata, `Sword_Guard_Idle`, come **prova della pipeline**:
+- `Assets/Art/Rabbi/Animations/Rabbi_anim.fbx`
+- `Assets/Art/Rabbi/Animations/Rabbi_anim_events.json` (nessun marker: la guardia non colpisce)
+
+Verificato reimportando l'FBX in Blender:
+- 60 fps (TimeMode 3), una sola take, nome probabile in Unity `Armature|Sword_Guard_Idle`;
+- 72 frame (0–72), ciclica: fra frame 0 e 72 lo scarto massimo delle ossa è 0.08 mm;
+- 77 ossa, tutte `mixamorig:*`, dita comprese; nessun osso di controllo dell'IK;
+- armatura a scala 1 e senza rotazione; altezza del Rabbi col cappello 1.805 m (la capsula
+  in Unity è 1.8);
+- dentro ci sono anche le mesh del Rabbi (nessuna arma, nessun oggetto di riferimento).
+
+**Serve da te** (dopo le voci arretrate delle 11:35, 11:45 e 11:50):
+1. Importa l'FBX come da `PIPELINE.md`: `Human`, loop attivo, bake into pose su
+   XZ/Y/rotazione, nome della clip `Sword_Guard_Idle`. Decidi l'avatar (domanda 2) e
+   annotalo in `PIPELINE.md`.
+2. Controlla e riporta qui: errori o avvisi del rig Humanoid; se in Unity la clip ha la
+   stessa scala e lo stesso orientamento di `Rabbi_rigged`; se i piedi poggiano a terra
+   (offset verticale); se il loop è pulito; se le dita arrivano.
+3. Fammela vedere sul Rabbi in gioco, anche solo temporaneamente (ad esempio al posto
+   della guardia col lock), con la spada in mano: deve giudicarla l'utente con la camera
+   vera. Non serve integrarla nel sistema vecchio; scegli tu il modo meno invasivo e poi
+   torna indietro.
+
+**File toccati:** `Docs/Combat/MOVES.md`, `Docs/Combat/HANDOFF.md`; export
+`Rabbi_anim.fbx` e `Rabbi_anim_events.json` (dall'utente).
+
+## 2026-10-12 11:50 · animazione → codice
+
+**Fatto:** correzione alla voce delle 11:45. L'IK delle gambe ora usa **ossa di controllo
+non deform dentro l'armatura** e non più empty: con gli empty i keyframe dei piedi
+sarebbero finiti in action separate da quella della mossa, e l'export *All Actions* li
+avrebbe persi. L'FBX va esportato con **Only Deform Bones**: nell'FBX restano solo le ossa
+`mixamorig:*` (verificato con un export/reimport). `PIPELINE.md` aggiornato.
+
+Sulla misura delle armi (punto 1 delle 11:45): ho visto che la catena è
+`RightHandSocket` (scala 0.01) → `Izmel_Hand` (modello ×50) / `AbramKnife_Hand` (×80).
+Mi serve comunque la **lunghezza in metri in world space**, misurata in gioco: l'utente
+deve scalare le armi in Blender sulla misura reale.
+
+**Serve da te:** niente oltre a quanto già chiesto.
+
+**File toccati:** `Docs/Combat/PIPELINE.md`, `Docs/Combat/HANDOFF.md`,
+`Tools/Blender/setup_leg_ik.py`.
+
+## 2026-10-12 11:45 · animazione → codice
+
+**Fatto:**
+- Nuovi script in `Tools/Blender/`: `setup_reference_scene.py` (collection `REF`: bersaglio,
+  anelli di distanza, camere di gioco con i valori di `CameraController`) e
+  `setup_leg_ik.py` (IK delle gambe con controlli empty). Entrambi provati su Blender 5.2
+  headless; per l'IK ho verificato che l'export FBX con bake registri la posa calcolata
+  (piedi entro 0.03 mm, ginocchia entro 3 mm) e che gli empty restino fuori.
+- `PIPELINE.md` aggiornato: `REF`, `CONTROLS`, armi di riferimento, export con
+  *Selected Objects*, impugnatura come fonte di verità, nomi delle clip.
+- L'utente ha preparato `Rabbi_anim.blend`: rest pose, action vecchie rimosse, `REF` creata.
+
+**Serve da te** (insieme alle misure di portata già chieste alle 11:35):
+1. **Lunghezza reale in gioco** (bounds in world space) di spada (`Izmel`) e coltello
+   (`AbramKnife`) impugnati, e altezza del Rabbi in gioco. Servono per controllare che
+   in Blender abbiano la stessa scala.
+2. **Come è fatto `rightHandSocket`**: di quale osso è figlio e con che trasformazione
+   locale. Quando arriverà `Rabbi_grip_Izmel.fbx` (vedi `PIPELINE.md`), da lì dovrai
+   ricavare gli offset di `IzmelData` perché la spada in gioco stia dove l'utente l'ha
+   impugnata in Blender. Non serve farlo ora, solo sapere se è fattibile e come.
+3. **Nomi delle clip**: nel test di export/reimport le take si chiamano
+   `Armature|<action>`. Tienine conto nell'import (vedi `PIPELINE.md`).
+
+**File toccati:** `Docs/Combat/PIPELINE.md`, `Docs/Combat/HANDOFF.md`,
+`Tools/Blender/setup_reference_scene.py`, `Tools/Blender/setup_leg_ik.py`.
+
+## 2026-10-12 11:35 · animazione → codice
+
+**Fatto:** riportate le decisioni dell'utente sulle domande 3, 4 e 5. Ho letto la tua voce
+delle 11:23: i numeri confermano il calcolo a 25 fps. Ho aggiornato la specifica di
+`Sword_Parry` in `MOVES.md`: finestra da 9 a **12 frame (200 ms)**, perché oggi la parata
+misurata dura 0.329 s, e dimezzarla al primo colpo sarebbe un salto troppo brusco.
+
+**Decisioni dell'utente:**
+- **Domanda 3: scartare** `8bf3b91` (MoveData legato agli stati) e `d9efa2e`
+  (`OnComboWindow`). Usa `git revert`, non `reset`: la storia resta e il commit `docs:`
+  successivo non si tocca. **Tenere** `2a41f9d` (lavoro pendente dell'utente) e `2447819`
+  (report e sonda: servono per il "dopo").
+- **Domanda 5: scartare il lunge** non committato (`PlayerMovement.cs`,
+  `PlayerAnimator.cs`). Si rifà direttamente nell'`ActionPlayer` in A.3; la tua misura
+  delle 11:23 vale come riferimento per i casi da provare.
+- **Domanda 4: niente `reachMultiplier`.** Serve invece **la misura**, adesso, con il
+  sistema vecchio: portata reale di pugni, coltello e spada (come nel tuo report: distanza
+  massima fra i due personaggi perché il colpo entri, per ogni mossa), e le **dimensioni
+  delle hitbox** (forma e misure del collider di mani, piedi, coltello, spada; per le armi,
+  anche dove sta rispetto al palmo). Mi serve per sapere in Blender dove devono arrivare
+  mano e lama al frame d'impatto.
+
+**Serve da te:**
+1. I due revert, scartare le modifiche non committate e cancellare `_TmpCombatTests/`.
+2. Le misure di portata e hitbox della domanda 4, in una tua voce qui.
+3. Poi riparti da A.2 (prototipo `ActionPlayer`) e fermati al checkpoint come da piano.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`.
 
 ## 2026-10-12 11:23 · codice → animazione
 

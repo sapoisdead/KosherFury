@@ -28,8 +28,26 @@ nella voce di handoff.
   - Mosse comuni a tutte le armi: senza prefisso. Esempi: `Dodge_F`, `Hit_Light_F`,
     `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`, `Weapon_Switch`.
   - Niente spazi, niente suffissi `.001`.
+- **Collection `REF`** con bersaglio, anelli di distanza e camere di gioco: la crea
+  `Tools/Blender/setup_reference_scene.py` con le misure del progetto Unity. Se le misure
+  cambiano, si aggiornano le costanti in cima allo script e lo si rilancia.
+- **IK delle gambe**: `Tools/Blender/setup_leg_ik.py` aggiunge all'armatura quattro ossa
+  di controllo **non deform** (`IK_Foot.L/R`, `Pole_Knee.L/R`, bone collection
+  `Controls`) e i vincoli IK. I piedi si animano con quelle ossa, quindi i loro keyframe
+  stanno nella stessa action della mossa. All'export restano fuori grazie a
+  **Only Deform Bones**, e il bake registra la posa finale (provato con un passo di 20 cm:
+  scarto massimo 5.6 mm).
+- **Armi di riferimento** nella collection `WEAPONS`, imparentate all'osso della mano
+  (`WPN_Sword` → `mixamorig:RightHand`). Non vanno nell'FBX delle animazioni.
+  L'impugnatura decisa in Blender è la fonte di verità: si esporta una volta in
+  `Assets/Art/Weapons/<Arma>/Rabbi_grip_<Arma>.fbx` (armatura + arma, senza animazione)
+  e da lì la sessione codice ricava `positionOffset` / `rotationOffset` di `WeaponData`.
 - **Ogni action**: Fake User attivo, **Manual Frame Range** impostato (il primo frame del
   range è il tempo 0 della clip in Unity), **Cyclic Animation** solo per i loop.
+  Attenzione: Cyclic Animation da sola **non** fa ripetere l'animazione. Per chiudere un
+  loop si lancia `Tools/Blender/make_action_cyclic.py`: su ogni curva copia la prima
+  chiave alla fine del periodo (il Manual Frame Range) e aggiunge il modificatore Cycles.
+  L'ultimo frame del range è uguale al primo.
 
 ## Marker
 
@@ -56,6 +74,10 @@ Cosa **non** sta nei marker (sta nel `MoveData` in Unity, e la proposta iniziale
    `Assets/Art/<Personaggio>/Animations/<Personaggio>_anim_events.json` e segnala in
    console gli errori di convenzione.
 2. **FBX** → `Assets/Art/<Personaggio>/Animations/<Personaggio>_anim.fbx`. Impostazioni:
+   - **Limit to: Selected Objects**, con selezionate solo l'armatura e le sue mesh: la
+     collection `REF` (creata da `Tools/Blender/setup_reference_scene.py`) non è
+     selezionabile e così resta fuori.
+   - **Armature › Only Deform Bones** sì (esclude le ossa di controllo).
    - Bake Animation attivo: **All Actions** sì, **NLA Strips** no (con entrambi le clip
      si duplicano), **Force Start/End Keying** sì, **Simplify 0** (non ammorbidisce gli
      impatti secchi).
@@ -91,6 +113,8 @@ Compaiono solo le action con Fake User attivo.
   (meglio *Copy From Other Avatar* da `Rabbi_rigged` che un avatar nuovo per ogni FBX).
   Bake into pose su XZ/Y/rotazione per tutte, **tranne** schivate e dash (XZ libero per
   il root motion). Loop solo per le clip `cyclic`.
+- **Nomi delle clip**: l'FBX di Blender può chiamare le take `Armature|<action>`
+  (visto in un test di export/reimport). Il nome valido è la parte dopo `|`.
 - **Importer** (menu `KosherFury/Combat/Import Move Markers`): legge il JSON e aggiorna
   **solo i tempi** dei `MoveData` con lo stesso nome, senza toccare gli altri campi.
   Segnala le action senza `MoveData`, i `MoveData` senza action e i marker mancanti

@@ -11,7 +11,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
-| `Sword_Guard_Idle` | Rabbi | spec | animazione: guardia della spada (lock) |
+| `Sword_Guard_Idle` | Rabbi | esportata | codice: primo import di prova |
 | `Sword_Light_1` | Rabbi | spec | animazione |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
@@ -26,11 +26,14 @@ tocca a loro (elenco completo in `PLAN.md`).
 
 ## Sword_Guard_Idle
 
-**Stato:** spec
+**Stato:** esportata (12 ottobre, 12:30). Posa chiave approvata dall'utente: più eretta della
+specifica, spada verticale vicino al corpo. Da verificare in gioco la leggibilità dalla camera alle spalle.
 
 ### Specifica
 - Guardia con la spada a nemico agganciato, ciclica. Durata 60–90 frame.
 - Non è l'idle libero (`Sword_Idle`, senza lock), che si farà con la locomozione.
+- **Fatta:** 72 frame (0–72, 1.2 s), ciclica. Respiro: bacino −1 cm al frame 36, petto,
+  testa e spada sfasati di +3/+6/+8 frame.
 - Deve leggersi diversa dalla guardia a mani nude anche in silhouette.
 - È la posa di partenza e di arrivo di tutte le mosse della spada: va salvata come asset
   `Pose_Guard_Sword` nella Pose Library.
@@ -106,9 +109,11 @@ _vuota_
 ### Specifica
 | Prima della finestra | Finestra (`parry_start`→`parry_end`) | Dopo | Totale |
 |---|---|---|---|
-| 2 | 9 (~150 ms) | 19 | 30 |
+| 2 | 12 (200 ms) | 16 | 30 |
 
 - La guardia scatta subito: il primo frame dopo il comando deve già muoversi.
+- Riferimento "prima" (misura): la parata di oggi dura 0.329 s dal comando. Si parte
+  da 200 ms e si stringe in gioco se è troppo facile.
 - Recovery a vuoto proposto: 20 frame (nel `MoveData`, si applica solo se la parata
   non ha intercettato niente).
 - Riposta dopo parata riuscita: `Sword_Riposte`, più avanti.
