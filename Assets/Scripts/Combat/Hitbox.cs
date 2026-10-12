@@ -65,6 +65,13 @@ public class Hitbox : MonoBehaviour
 
     private bool active;
     private float damage;
+
+    // Mossa che ha aperto la finestra in corso. Se c'e', i valori del colpo normale
+    // (congelamento, scuotimento, spinta, reazione del rig) vengono da li' invece che
+    // dai campi serializzati qui sopra: e' cio' che permette di distinguere un jab da
+    // un calcio pur usando la stessa hitbox. Null = valori serializzati, che e' il
+    // caso dei nemici e di ogni mossa del player ancora senza MoveData.
+    private MoveData move;
     private Vector3 lastCenter;
     private bool hasLastCenter;
     private Health ownerHealth;
@@ -101,9 +108,12 @@ public class Hitbox : MonoBehaviour
 
     // Apre la finestra di colpo. Il danno lo decide chi chiama (arma equipaggiata,
     // dati del nemico, ecc.): la hitbox resta ignara di cosa la sta usando.
-    public void Activate(float damage)
+    public void Activate(float damage) => Activate(damage, null);
+
+    public void Activate(float damage, MoveData move)
     {
         this.damage = damage;
+        this.move = move;
         hitThisSwing.Clear();
         active = true;
         hasLastCenter = false;
@@ -276,14 +286,14 @@ public class Hitbox : MonoBehaviour
         else if (wasParried && IsPlayer(health.transform))
             ComboCounter.Register();
 
-        float appliedHitStop = wasParried ? hitStopOnParry : (isExecution ? hitStopOnExecution : hitStop);
+        float appliedHitStop = wasParried ? hitStopOnParry : (isExecution ? hitStopOnExecution : HitStopValue);
         HitStop.Freeze(OwnerRoot.gameObject, health.gameObject, appliedHitStop);
 
         // Solo se c'e' di mezzo il player: due nemici che si colpiscono lontano dalla
         // camera non devono muovere l'inquadratura.
         if (InvolvesPlayer(health))
         {
-            float appliedShake = wasParried ? cameraShakeOnParry : (isExecution ? cameraShakeOnExecution : cameraShake);
+            float appliedShake = wasParried ? cameraShakeOnParry : (isExecution ? cameraShakeOnExecution : CameraShakeValue);
             CameraShake.Add(appliedShake);
             GamepadRumble.Add(appliedShake, appliedShake * 0.5f);
 
@@ -311,7 +321,7 @@ public class Hitbox : MonoBehaviour
         // spostato il contenitore 'Simps' con dentro tutte le guardie.
         Transform pushed = wasParried ? attacker : victim.transform;
         Transform origin = wasParried ? victim.transform : attacker;
-        float force = wasParried ? knockbackOnParry : knockback;
+        float force = wasParried ? knockbackOnParry : KnockbackValue;
 
         if (force <= 0f || pushed == null || origin == null) return;
 
@@ -321,8 +331,14 @@ public class Hitbox : MonoBehaviour
         // semplicemente quella parte della reazione non succede
         pushed.GetComponentInChildren<Knockback>()?.Apply(direction, force);
         pushed.GetComponentInChildren<HitImpactReaction>()?.Kick(
-            direction, wasParried ? impactReactionOnParry : impactReaction);
+            direction, wasParried ? impactReactionOnParry : ImpactReactionValue);
     }
+
+    // Valori del colpo normale: dalla mossa in corso se c'e', altrimenti i serializzati
+    private float HitStopValue        => move != null ? move.hitStop        : hitStop;
+    private float CameraShakeValue    => move != null ? move.cameraShake    : cameraShake;
+    private float KnockbackValue      => move != null ? move.knockback      : knockback;
+    private float ImpactReactionValue => move != null ? move.impactReaction : impactReaction;
 
     private static bool IsPlayer(Transform t)
     {

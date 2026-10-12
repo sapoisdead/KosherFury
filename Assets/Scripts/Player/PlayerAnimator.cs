@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
@@ -23,7 +24,11 @@ public class PlayerAnimator : MonoBehaviour
     [Tooltip("Ritmo minimo di riproduzione della locomozione, sotto la velocita' di camminata. A zero il passo si congelerebbe alle andature lentissime: meglio un filo di scivolamento che un personaggio che avanza al rallentatore.")]
     [SerializeField] private float minLocomotionPlaybackRate = 0.35f;
 
-    [Header("Moltiplicatori di danno per colpo (sul danno base dell'arma equipaggiata)")]
+    [Header("Mosse")]
+    [Tooltip("Un MoveData per stato d'attacco (Assets/ScriptableObjects/Moves). Danno, impatto e lunge di una mossa vengono da qui; uno stato senza MoveData usa i moltiplicatori sotto e i valori serializzati sulla Hitbox.")]
+    [SerializeField] private MoveData[] moves;
+
+    [Header("Moltiplicatori di danno per colpo, usati solo dalle mosse SENZA MoveData")]
     [Tooltip("Nello stesso ordine della combo: Pugno destro, Calcio sinistro, Pugno sinistro, Calcio destro. Moltiplica il danno dell'arma a mani nude (fists) in WeaponData.")]
     [SerializeField] private float[] punchComboMultiplier = { 1f, 1.1f, 1f, 1.2f };
 
@@ -138,6 +143,7 @@ public class PlayerAnimator : MonoBehaviour
     private int pendingSlashStateHash;
     private WeaponManager weaponManager;
     private Knockback knockback;
+    private readonly Dictionary<int, MoveData> movesByState = new();
 
     // postura: 0 = combat (a mani nude), 1 = con l'arma in pugno.
     // La postura pacifica e' stata rimossa: il player e' sempre in guardia.
@@ -156,6 +162,11 @@ public class PlayerAnimator : MonoBehaviour
 
         weaponManager = GetComponent<WeaponManager>();
         knockback = GetComponent<Knockback>();
+
+        if (moves != null)
+            foreach (var move in moves)
+                if (move != null && !string.IsNullOrEmpty(move.stateName))
+                    movesByState[move.StateHash] = move;
 
         foreach (var hb in GetComponentsInChildren<Hitbox>(true))
         {
@@ -521,44 +532,60 @@ public class PlayerAnimator : MonoBehaviour
     // ginocchiata riuserebbero lo stesso evento senza toccare il codice - ma dato
     // che ogni arto e' comunque un solo colpo specifico della combo (vedi l'ordine
     // di PunchStates), il danno giusto lo troviamo guardando lo stato attivo.
-    public void OnRightHandStart() => OpenWindow(rightHandHitbox, DamageForCurrentState(PunchStates, punchComboMultiplier));
+    public void OnRightHandStart() => OpenAttackWindow(rightHandHitbox);
     public void OnRightHandEnd()   => CloseWindow(rightHandHitbox);
-    public void OnLeftHandStart()  => OpenWindow(leftHandHitbox, DamageForCurrentState(PunchStates, punchComboMultiplier));
+    public void OnLeftHandStart()  => OpenAttackWindow(leftHandHitbox);
     public void OnLeftHandEnd()    => CloseWindow(leftHandHitbox);
 
-    public void OnRightFootStart() => OpenWindow(rightFootHitbox, DamageForCurrentState(PunchStates, punchComboMultiplier));
+    public void OnRightFootStart() => OpenAttackWindow(rightFootHitbox);
     public void OnRightFootEnd()   => CloseWindow(rightFootHitbox);
-    public void OnLeftFootStart()  => OpenWindow(leftFootHitbox, DamageForCurrentState(PunchStates, punchComboMultiplier));
+    public void OnLeftFootStart()  => OpenAttackWindow(leftFootHitbox);
     public void OnLeftFootEnd()    => CloseWindow(leftFootHitbox);
 
-    // OnWeaponStart invece e' davvero condiviso da 5 attacchi diversi (Slash,
-    // Slash_2, Sword_Pierce, Sword_Final, Area_Slash): qui il controllo sullo
-    // stato serve per forza, non e' solo un fallback.
-    public void OnWeaponStart()
-    {
-        int hash = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-        float baseDamage = weaponManager?.CurrentWeapon?.damage ?? 0f;
-        float multiplier = hash == AreaSlashStateHash ? areaSlashMultiplier : MultiplierForCurrentState(SlashStates, slashComboMultiplier);
-        OpenWindow(weaponManager?.CurrentHitbox, multiplier * baseDamage);
-    }
+    // OnWeaponStart e' condiviso da 5 attacchi diversi (Slash, Slash_2,
+    // Sword_Pierce, Sword_Final, Area_Slash): la mossa la decide lo stato.
+    public void OnWeaponStart()    => OpenAttackWindow(weaponManager?.CurrentHitbox);
     public void OnWeaponEnd()      => CloseWindow(weaponManager?.CurrentHitbox);
 
-    // Cerca lo stato attivo tra quelli elencati e moltiplica il danno base
-    // dell'arma equipaggiata (WeaponData.damage) per il fattore nella stessa
-    // posizione dell'array parallelo. I valori configurati qui sono fattori, non
-    // danno assoluto: cosi' la stessa combo scala con qualunque arma equipaggiata,
-    // non serve piu' un danno fisso duplicato per ogni arma.
-    private float DamageForCurrentState(int[] stateHashes, float[] multipliers)
+    // MoveData dello stato indicato, null se la mossa non ne ha uno.
+    public MoveData MoveForState(int stateHash) =>
+        movesByState.TryGetValue(stateHash, out var move) ? move : null;
+
+    // Stato d'attacco in corso. Durante la transizione d'ingresso l'Animator e'
+    // ancora nello stato di partenza, quindi lo stato giusto e' quello di arrivo.
+    public int AttackStateHash()
     {
-        float baseDamage = weaponManager?.CurrentWeapon?.damage ?? 0f;
-        return MultiplierForCurrentState(stateHashes, multipliers) * baseDamage;
+        if (animator.IsInTransition(0))
+        {
+            int next = animator.GetNextAnimatorStateInfo(0).shortNameHash;
+            if (IsAttackState(next)) return next;
+        }
+        return animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
     }
 
-    private float MultiplierForCurrentState(int[] stateHashes, float[] multipliers)
+    private static bool IsAttackState(int hash) =>
+        IsInAnyState(hash, PunchStates) || IsInAnyState(hash, SlashStates) || hash == AreaSlashStateHash;
+
+    // Il danno e' sempre un fattore sul danno base dell'arma equipaggiata
+    // (WeaponData.damage), cosi' la stessa combo scala con qualunque arma. Il
+    // fattore viene dal MoveData della mossa se c'e', altrimenti dagli array
+    // paralleli qui sopra, come prima che esistessero i MoveData.
+    private void OpenAttackWindow(Hitbox hitbox)
     {
-        int hash = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-        for (int i = 0; i < stateHashes.Length; i++)
-            if (stateHashes[i] == hash) return multipliers[i];
+        int hash = AttackStateHash();
+        MoveData move = MoveForState(hash);
+        float multiplier = move != null ? move.damageMultiplier : FallbackMultiplier(hash);
+        float baseDamage = weaponManager?.CurrentWeapon?.damage ?? 0f;
+        OpenWindow(hitbox, multiplier * baseDamage, move);
+    }
+
+    private float FallbackMultiplier(int hash)
+    {
+        if (hash == AreaSlashStateHash) return areaSlashMultiplier;
+        for (int i = 0; i < PunchStates.Length; i++)
+            if (PunchStates[i] == hash) return punchComboMultiplier[i];
+        for (int i = 0; i < SlashStates.Length; i++)
+            if (SlashStates[i] == hash) return slashComboMultiplier[i];
         return 0f;
     }
 
@@ -567,10 +594,10 @@ public class PlayerAnimator : MonoBehaviour
     // Confronto esplicito con null e non '?.': l'operatore di C# ignora il controllo
     // "oggetto distrutto" di Unity, quindi una hitbox gia' distrutta (arma cambiata
     // a colpo in volo) passava il filtro e lanciava MissingReferenceException.
-    private void OpenWindow(Hitbox hitbox, float damage)
+    private void OpenWindow(Hitbox hitbox, float damage, MoveData move)
     {
         combatState.OpenActiveWindow();
-        if (hitbox != null) hitbox.Activate(damage);
+        if (hitbox != null) hitbox.Activate(damage, move);
     }
 
     private void CloseWindow(Hitbox hitbox)
