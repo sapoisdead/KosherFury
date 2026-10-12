@@ -12,11 +12,14 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
 | `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
-| `Sword_Light_1` | Rabbi | esportata (blocking) | codice: prova in gioco dal prototipo |
+| `Sword_Light_1` | Rabbi | esportata (blocking, 54 f) | codice: prova del nuovo timing in gioco |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
 | `Sword_Parry` | Rabbi | spec | animazione |
 | `Dodge_F` | Rabbi | spec | animazione |
+
+**Nota sui tempi:** dopo la prova di `Sword_Light_1` i tempi di specifica delle altre
+mosse (37–50 frame) vanno rivisti con lo stesso criterio prima di animarle.
 
 Fetta verticale della spada: queste sei mosse bastano per provare il sistema nuovo da
 capo a fondo (attacco, combo, parata, schivata). Le altre si aggiungono qui quando
@@ -62,12 +65,17 @@ non esiste, l'anteprima in gioco è un override in memoria valido solo in Play M
 
 ## Sword_Light_1
 
-**Stato:** esportata come **blocking** (12 ottobre, 15:44). Marker 10 / 15 / 18 / 23, fine 37.
+**Stato:** esportata come blocking a 54 frame (16:10). Da fare: pose tenute ai frame 14 e 22, piede sinistro piantato dopo l'impatto, impatto più alto e meno lontano (portata verso 1.40 m).
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
 |---|---|---|---|---|---|
-| 10 | 5 | 22 | 18 | 23 | 37 |
+| 18 | 6 | 30 | 28 | 34 | 54 |
+
+Rivista il 12 ottobre dopo la prova del blocking: a 37 frame "si appiattisce tutto"
+(utente). Pose: 0 guardia, 10 carica, 14 carica tenuta, 18 ingresso, 20 impatto,
+22 impatto tenuto, 24 uscita, 28 fine corsa, 40 recupero, 54 guardia. Lo scatto
+fra carica e ingresso resta di 4 frame: il contrasto lento/veloce dà il peso.
 
 - Fendente diagonale dall'alto a destra verso il basso a sinistra.
 - Parte da `Pose_Guard_Sword` e finisce in una posa da cui parte `Sword_Light_2`.
@@ -107,6 +115,24 @@ ancora (A.3).
   `Sword_Guard_Idle` frame 0, con scarto 0.0° e 0.0 cm su tutte le ossa. Quindi nessuno
   scatto all'ingresso né al ritorno.
 - Mano destra al frame 12: 0.53 m avanti e 0.55 m da terra, come misurato in Blender.
+
+**Versione a 54 frame (export delle 16:09–16:10), integrata alle 16:22.** I tempi ora
+li scrive l'importer dei marker, non più io a mano: finestra arma 18–24, `combo` 28,
+`cancel` 34, fine 54. È il primo `MoveData` vero (`Assets/ScriptableObjects/Moves/
+Sword_Light_1.asset`, nel `Moveset_Sword` di `AbramKnife`), suonato dalla macchina a stati
+di A.3. Impatto: hit stop 0.06, shake 0.25, knockback 1.0, danno ×2. Niente lunge.
+
+| Bersaglio a | Colpito | Frame del contatto | Centro della hitbox da terra |
+|---|---|---|---|
+| 1.00 m | sì | 19 | 1.18 m |
+| 1.20 m | sì | 20 | 1.08 m |
+| 1.40 m | sì | 21 | 0.97 m |
+
+- **Portata: 1.625 m fra i centri** (misura, ±6 mm). Obiettivo 1.40.
+- Contatto sempre dentro la finestra 18–24.
+- Raccordi: primo e ultimo frame identici a `Sword_Guard_Idle` (0.0°, 0.0 cm).
+- Mano destra al frame 21: 0.53 m avanti, 0.59 m da terra.
+- Catena (con un `nextLight` di prova): il colpo successivo parte esattamente al frame 28.
 
 ---
 

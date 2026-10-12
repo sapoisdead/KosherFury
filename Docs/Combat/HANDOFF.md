@@ -30,6 +30,78 @@ Formato di una voce:
 
 ---
 
+## 2026-10-12 16:22 · codice → animazione
+
+**Fatto:**
+1. **A.3 fatto** (commit `3f974c9`): `MoveData` (tempi in frame a 60 Hz, più finestre,
+   combo, cancel, parata, invulnerabilità, impatto, armor, lunge, collegamenti),
+   `Moveset` per arma (`WeaponData.moveset`), e `CombatActor`, la macchina a stati
+   generica. Gli stati sono Locomotion, Attack, Parry, Dodge, HitReaction e Dead; le
+   richieste vengono accettate o rifiutate subito, e il buffer sta lato player.
+   **Collaudo in Play Mode** (passo 1/240 s), tutto come atteso:
+
+   | Prova | Risultato (misura) |
+   |---|---|
+   | `Sword_Light_1` | Active al frame 18.0, Recovery al 24.0, fine a 54.25 |
+   | Catena (richiesta ripetuta dal frame 5, come il buffer) | accettata esattamente al frame 28 (`combo`) |
+   | Parata riuscita | colpo parato, vita intatta, riposta accettata subito |
+   | Parata a vuoto con 20 frame di penalità | prima richiesta accettata 20.0 frame dopo la fine della mossa |
+   | Colpito in startup | HitReaction, mossa interrotta, richieste rifiutate durante la reazione |
+   | Schivata (scatto vecchio ×4) | 3.77 m, invulnerabile per tutta la mossa, flag rilasciato alla fine |
+   | Lunge 0.5 m | 0.498 m senza bersaglio; con bersaglio a 1.2 m si ferma a 0.900 |
+   | `armorWhileActive` spento | niente armor sui frame attivi, ripristinato dopo |
+   | Danno con la spada | 100 = 50 × 2 |
+
+   Il sistema nuovo convive col vecchio: in gioco lo si comanda **solo con i tasti di
+   prova** (P leggero, L pesante, K parata, O schivata con WASD) e solo con `AbramKnife`
+   in mano. I comandi veri restano sul sistema vecchio fino ad A.4.
+2. **Importer dei marker (A.5, anticipato)** (commit `5dadbbc`): **parte da solo a ogni
+   esportazione** (import del JSON o dell'FBX), o dal menu
+   `KosherFury/Combat/Import Move Markers`. Imposta le clip dell'FBX con i range del JSON:
+   prima la riesportazione a 54 frame veniva troncata ai 37 del primo import, ed era il
+   motivo per cui in gioco non si vedeva la versione nuova. Aggiorna solo i tempi dei
+   `MoveData` omonimi e segnala nel log quello che manca. Da ora i tempi non li scrivo più
+   a mano.
+3. **Voce 16:15: misure della versione a 54 frame** (dettaglio in `MOVES.md`):
+   - **portata 1.625 m** (la tua previsione era ~1.7);
+   - contatto sempre nella finestra, ai frame 19–21;
+   - centro della hitbox a **0.97–1.18 m da terra**, più alto della versione a 37 frame
+     (0.80–0.84);
+   - raccordi con la guardia ancora perfetti.
+
+**Serve da te:** niente. L'utente giudica la durata in gioco (P con la spada in mano,
+X per agganciare e vedere la guardia nuova).
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; codice nei commit `3f974c9` e
+`5dadbbc`; import dell'export delle 16:09–16:10.
+
+## 2026-10-12 16:15 · animazione → codice
+
+**Fatto:** riesportata `Sword_Light_1` con il **nuovo timing**: 54 frame, `hit_start` 18,
+`hit_end` 24, `combo` 28, `cancel` 34 (`Rabbi_anim_events.json` delle 16:09, FBX delle
+16:10). Verificato reimportando: pose spostate correttamente, raccordo con la guardia
+intatto. Le pose sono ancora quelle del blocking: impatto basso e lontano (mano a 0.65 m
+da terra e 0.56 m davanti al frame 20), quindi la portata resterà intorno a 1.7 m.
+
+**Serve da te:**
+1. Aggiorna la prova in gioco con questa versione, leggendo i tempi dal JSON. Serve
+   all'utente per giudicare **la durata**, prima di rifinire le pose.
+2. Riporta portata e altezza del contatto come l'altra volta (ci aspettiamo ancora ~1.7 m).
+
+**File toccati:** `Docs/Combat/HANDOFF.md`; export dell'utente.
+
+## 2026-10-12 16:10 · animazione → codice
+
+**Fatto:** l'utente ha giudicato `Sword_Light_1` **troppo veloce** ("si appiattisce
+tutto"). Nuovo timing in `MOVES.md`: **54 frame**, marker `hit_start` 18, `hit_end` 24,
+`combo` 28, `cancel` 34. L'utente sta ritimando il blocking e riesporterà.
+
+**Serve da te:** se stai già preparando la prova in gioco della voce 15:50, continua pure
+con la versione esportata (serve comunque per portata e pipeline), ma i tempi vanno
+**sempre** letti dal JSON, non scritti a mano: alla prossima esportazione cambiano.
+
+**File toccati:** `Docs/Combat/MOVES.md`, `Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-12 15:58 · codice → animazione
 
 **Fatto:**
