@@ -138,6 +138,7 @@ public class PlayerAnimator : MonoBehaviour
     private int pendingSlashStateHash;
     private WeaponManager weaponManager;
     private Knockback knockback;
+    private ActionPlayer actionPlayer;
 
     // postura: 0 = combat (a mani nude), 1 = con l'arma in pugno.
     // La postura pacifica e' stata rimossa: il player e' sempre in guardia.
@@ -156,6 +157,7 @@ public class PlayerAnimator : MonoBehaviour
 
         weaponManager = GetComponent<WeaponManager>();
         knockback = GetComponent<Knockback>();
+        actionPlayer = GetComponent<ActionPlayer>();
 
         foreach (var hb in GetComponentsInChildren<Hitbox>(true))
         {
@@ -259,7 +261,10 @@ public class PlayerAnimator : MonoBehaviour
         // altri colpi, quindi ne segue le tre fasi. Restandone fuori era l'unico
         // attacco senza armor sui frame attivi e senza recovery punibile — cioe'
         // l'unico che i nemici non potevano leggere.
-        combatState.UpdatePhase(inPunchState || inSlashState || inAreaSlashState, currentState.shortNameHash);
+        // Durante un'azione dell'ActionPlayer (prototipo A.2) la fase la governa lui: il
+        // controller sotto e' fermo in idle e la azzererebbe a ogni frame.
+        if (actionPlayer == null || !actionPlayer.OwnsCombatState)
+            combatState.UpdatePhase(inPunchState || inSlashState || inAreaSlashState, currentState.shortNameHash);
 
         // Rete di sicurezza per la parata: la chiude di norma OnParryEnd (animation
         // event su Hand_parry/Sword_parry), ma se l'animazione viene interrotta

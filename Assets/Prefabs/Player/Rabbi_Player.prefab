@@ -544,6 +544,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6726069637584029722}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8945909721774494110}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7354037617075719235}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1750504258201809199}
   m_SourcePrefab: {fileID: 100100000, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
 --- !u!4 &2296102834484063810 stripped
 Transform:
@@ -774,6 +783,69 @@ MonoBehaviour:
   degreesPerForce: 12
   maxDegrees: 35
   recoveryTime: 0.3
+--- !u!114 &8945909721774494110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5650684950552524458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80a6a92b065d8408fa515e5f5740901a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ActionPlayer
+--- !u!114 &7354037617075719235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5650684950552524458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58eb2f018ceb94e918f701d4729c6b47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHitboxSource
+  rightHand: {fileID: 0}
+  leftHand: {fileID: 0}
+  rightFoot: {fileID: 0}
+  leftFoot: {fileID: 0}
+--- !u!114 &1750504258201809199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5650684950552524458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd3add620c9224892a2102800676643d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ActionPrototypeInput
+  attack:
+    name: Proto_Punch_Right
+    clip: {fileID: -6722069697309059768, guid: 76dd73d7c9e2444ab9eeb16fba0dd90a, type: 3}
+    speed: 1.96
+    fadeIn: 0.05
+    fadeOut: 0.15
+    isAttack: 1
+    rootMotion: 0
+    damageMultiplier: 2
+    windows:
+    - slot: 0
+      startFrame: 24.489798
+      endFrame: 33.061222
+  dash:
+    name: Proto_Dash_Front
+    clip: {fileID: 2869923769033524098, guid: 3e6a5ec5067b844dd8368cb52f17a3d3, type: 3}
+    speed: 1.5
+    fadeIn: 0.05
+    fadeOut: 0.1
+    isAttack: 0
+    rootMotion: 1
+    damageMultiplier: 0
+    windows: []
 --- !u!4 &7193262545030006739 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2412161367050800168, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}

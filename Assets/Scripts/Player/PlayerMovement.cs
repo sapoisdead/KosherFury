@@ -30,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController controller;
     private PlayerAnimator animator;
     private Animator anim;
+    private ActionPlayer actionPlayer;
     private Vector2 moveInput;
     private bool isSprinting;
     private InputAction moveAction;
@@ -71,6 +72,7 @@ public class PlayerMovement : MonoBehaviour
         controller = GetComponent<CharacterController>();
         animator = GetComponent<PlayerAnimator>();
         anim = GetComponent<Animator>();
+        actionPlayer = GetComponent<ActionPlayer>();
 
         if (Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -318,7 +320,10 @@ public class PlayerMovement : MonoBehaviour
         // quella un nemico che si sposta di poco farebbe mancare un colpo gia'
         // partito. Lo scatto invece passa sopra a questo blocco (sta piu' in
         // alto): annullare l'attacco con una schivata resta possibile.
-        if (animator != null && animator.IsCommittedToAttack)
+        // Anche un'azione dell'ActionPlayer (prototipo A.2) e' un impegno: lo spostamento,
+        // se c'e', lo porta il suo root motion in OnAnimatorMove.
+        bool inAction = actionPlayer != null && actionPlayer.IsPlaying;
+        if ((animator != null && animator.IsCommittedToAttack) || inAction)
         {
             if (locked) FaceLockTarget();
             controller.Move((AttackAdvance(locked) + velocity) * Time.deltaTime);
@@ -437,6 +442,16 @@ public class PlayerMovement : MonoBehaviour
     // sorprese se un domani qualche clip venisse riesportata con la radice sbloccata.
     private void OnAnimatorMove()
     {
+        // Root motion di un'azione dell'ActionPlayer (prototipo A.2): stesso trattamento
+        // dello scatto, sul piano e attraverso il CharacterController.
+        if (actionPlayer != null && actionPlayer.WantsRootMotion && anim != null)
+        {
+            Vector3 actionDelta = anim.deltaPosition;
+            actionDelta.y = 0f;
+            controller.Move(actionDelta);
+            return;
+        }
+
         if (!useRootMotionForDash || !IsDashing || anim == null) return;
 
         Vector3 delta = anim.deltaPosition;
