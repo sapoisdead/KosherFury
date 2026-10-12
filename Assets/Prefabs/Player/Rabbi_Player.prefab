@@ -836,6 +836,19 @@ MonoBehaviour:
     - slot: 0
       startFrame: 24.489798
       endFrame: 33.061222
+  swordAttack:
+    name: Proto_Sword_Light_1
+    clip: {fileID: 1343954476253186574, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
+    speed: 1
+    fadeIn: 0.05
+    fadeOut: 0.1
+    isAttack: 1
+    rootMotion: 0
+    damageMultiplier: 2
+    windows:
+    - slot: 4
+      startFrame: 10
+      endFrame: 15
   dash:
     name: Proto_Dash_Front
     clip: {fileID: 2869923769033524098, guid: 3e6a5ec5067b844dd8368cb52f17a3d3, type: 3}
