@@ -46,7 +46,7 @@ Parata, pesante (`Area_Slash`), schivate e reazione al colpo sono quelle di oggi
 una mossa nuova arriva, basta che abbia un `MoveData` con il suo nome e che il moveset
 punti a lei. L'importer aggiorna i tempi da solo.
 
-**Decisione dell'utente sulle misure:** niente più tarature sulle mosse vecchie. Si
+**Sulle misure, su indicazione dell'utente:** niente più tarature sulle mosse vecchie. Si
 controlla solo che il sistema funzioni, e le misure di gioco (portata, contatto, tempi) si
 fanno sulle clip nuove quando servono per decidere. Quindi nelle mie voci non ci saranno
 più tabelle sui `Legacy_*`.
