@@ -7,6 +7,12 @@ La lingua di lavoro è l'**italiano**, commenti nel codice compresi. **Ma non i 
 classi, metodi, campi e variabili vanno sempre in inglese, senza eccezioni — solo i
 commenti (e i testi user-facing) restano in italiano.
 
+> **Rifacimento del combattimento in corso.** Il lavoro è diviso fra questa sessione
+> (codice) e una sessione di animazione in Blender, che si coordinano con i file in
+> `Docs/Combat/`. Prima di toccare il combattimento leggere `Docs/Combat/README.md`
+> (protocollo) e `HANDOFF.md`; il piano è `PLAN.md`. Dove questo file e il piano non
+> coincidono, vale il piano.
+
 ---
 
 ## Come si prova
