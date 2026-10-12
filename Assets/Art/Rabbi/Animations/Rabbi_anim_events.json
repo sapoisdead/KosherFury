@@ -2,13 +2,24 @@
   "character": "Rabbi",
   "blend": "Rabbi_anim.blend",
   "fps": 60,
-  "exported_at": "2026-10-12T12:23:14",
+  "exported_at": "2026-10-12T15:42:52",
   "actions": {
     "Sword_Guard_Idle": {
       "frame_start": 0,
       "frame_end": 72,
       "cyclic": true,
       "markers": {}
+    },
+    "Sword_Light_1": {
+      "frame_start": 0,
+      "frame_end": 37,
+      "cyclic": false,
+      "markers": {
+        "hit_start": 10,
+        "hit_end": 15,
+        "combo": 18,
+        "cancel": 23
+      }
     }
   }
 }

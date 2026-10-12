@@ -12,7 +12,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
 | `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
-| `Sword_Light_1` | Rabbi | spec | animazione |
+| `Sword_Light_1` | Rabbi | esportata (blocking) | codice: prova in gioco dal prototipo |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
 | `Sword_Parry` | Rabbi | spec | animazione |
@@ -62,7 +62,7 @@ non esiste, l'anteprima in gioco è un override in memoria valido solo in Play M
 
 ## Sword_Light_1
 
-**Stato:** spec
+**Stato:** esportata come **blocking** (12 ottobre, 15:44). Marker 10 / 15 / 18 / 23, fine 37.
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
@@ -71,12 +71,42 @@ non esiste, l'anteprima in gioco è un override in memoria valido solo in Play M
 
 - Fendente diagonale dall'alto a destra verso il basso a sinistra.
 - Parte da `Pose_Guard_Sword` e finisce in una posa da cui parte `Sword_Light_2`.
-- Hitbox: arma.
+- Hitbox: arma (`AbramKnife`, capsula r 0.186 che arriva a 0.873 m dal palmo).
+- **Portata obiettivo: 1.40 m fra i centri** (oggi `Slash` entra a 1.43, misura 12:38).
+  In Blender: la lama deve attraversare `REF_Target` (a 1.40 m) fra `hit_start` e
+  `hit_end`, all'altezza del petto.
+- **Sul posto**: il passo avanti c'è (piede sinistro +10–15 cm, bacino +5–8 cm), ma la
+  clip è in bake into pose, quindi l'avanzamento vero lo fa il lunge nel codice. Se la
+  catena non prosegue, nel recovery i piedi tornano nella posizione della guardia.
+- Posa chiave a `combo` (frame 18) = posa di partenza di `Sword_Light_2`: spada bassa a
+  sinistra, già caricata per il rovescio.
 - Impatto proposto: hit stop 0.06 s, shake 0.25, knockback 1.0, reazione Light.
 - Lunge proposto: da decidere dopo la prova della portata al bersaglio di riferimento.
 
 ### Integrazione
-_vuota_
+Blocking importato il 12 ottobre alle 15:56 (sessione codice). Suonato dal prototipo
+`ActionPlayer` (Quadrato / P con un'arma in mano), finestra dell'arma 10–15 letta a mano
+dal JSON, danno ×2 come la `Slash` di oggi, HitStop attivo, niente lunge. Nessun `MoveData`
+ancora (A.3).
+- Import: take `Armature|Sword_Light_1` → clip `Sword_Light_1`, 0–37 (0.617 s), niente
+  loop, compressione Off, avatar di `Rabbi_rigged`.
+- Misure in Play Mode (bersaglio con la capsula del simp, `AbramKnife`, passo 1/240 s):
+
+  | Bersaglio a | Colpito | Frame del contatto | Centro della hitbox da terra |
+  |---|---|---|---|
+  | 1.00 m | sì | 10.25 | 1.11 m |
+  | 1.20 m | sì | 12.25 | 0.80 m |
+  | 1.40 m | sì | 12.00 | 0.84 m |
+
+  **Portata: 1.675 m fra i centri** (ricerca binaria, ±6 mm). Obiettivo 1.40 m: supera
+  l'obiettivo di 27 cm. La `Slash` di oggi con la stessa arma entra a 1.431 m.
+  Il contatto cade sempre dentro la finestra. A 1.20–1.40 m arriva al frame 12 con il
+  centro della hitbox a 0.80–0.84 m da terra: è altezza di cintura più che di petto (il
+  simp è alto 1.80). La capsula ha raggio 0.186, quindi tocca dai 0.65 ai 1.02 m circa.
+- Raccordi (campionati in editor su `Rabbi_rigged`): primo e ultimo frame identici a
+  `Sword_Guard_Idle` frame 0, con scarto 0.0° e 0.0 cm su tutte le ossa. Quindi nessuno
+  scatto all'ingresso né al ritorno.
+- Mano destra al frame 12: 0.53 m avanti e 0.55 m da terra, come misurato in Blender.
 
 ---
 

@@ -24,11 +24,88 @@ Formato di una voce:
 | 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
 | 4 | _(risolta 11:35: niente `reachMultiplier`, solo misura)_ | — | — |
 | 5 | _(risolta 11:35: lunge scartato, si rifà nell'`ActionPlayer`)_ | — | — |
-| 6 | Compressione delle clip in Unity: oggi *Keyframe Reduction* (default). Per i colpi propongo **Off**, per coerenza con *Simplify 0* in Blender (un impatto secco non deve essere ammorbidito). Annotarlo in `PIPELINE.md`? | utente | codice |
+| 6 | _(risolta 15:56: compressione **Off** per tutte le clip, annotato in `PIPELINE.md`)_ | — | — |
 | 7 | _(risolta 12:43: la **spada** è `AbramKnife` (1.06 m), il **coltello** è `Izmel` (0.54 m))_ | — | — |
 | 8 | _(risolta 12:43: vale l'altezza del modello originale, **1.60 m** come in Unity; Blender si adegua)_ | — | — |
 
 ---
+
+## 2026-10-12 15:58 · codice → animazione
+
+**Fatto:**
+- **Domanda 6: compressione Off** (decisione dell'utente), già applicata a
+  `Rabbi_anim.fbx` e annotata in `PIPELINE.md`.
+- **`Sword_Light_1` importata** (seconda take, niente loop) e suonata dall'`ActionPlayer`:
+  **Quadrato / P con un'arma in mano**, finestra dell'arma 10–15 letta a mano dal JSON,
+  HitStop attivo, niente lunge. A mani nude lo stesso tasto fa ancora il pugno di prova.
+- In gioco adesso (Play Mode aperto): `AbramKnife` in mano, e col lock la guardia nuova
+  al posto di quella vecchia (override in memoria, come alle 12:41). L'utente può provare
+  colpo e ritorno in guardia.
+
+**Misure** (dettaglio in `MOVES.md`, sezione Integrazione di `Sword_Light_1`):
+- **Portata: 1.675 m fra i centri**, contro l'obiettivo di 1.40 m (+27 cm) e i 1.431 m
+  della `Slash` di oggi con la stessa arma. A 1.40 m quindi entra senza lunge, con margine.
+- **Contatto sempre dentro la finestra 10–15**: frame 10.25 a 1.00 m, frame 12 a 1.20 e a 1.40 m.
+- **Altezza del contatto**: il centro della hitbox è a **0.80–0.84 m da terra** quando
+  tocca a 1.20–1.40 m. È altezza di **cintura**, non di petto (la specifica chiedeva il
+  petto). Con il raggio di 0.186 la capsula copre all'incirca 0.65–1.02 m.
+- **Raccordi con la guardia**: primo e ultimo frame identici a `Sword_Guard_Idle`, con
+  0.0° e 0.0 cm su tutte le ossa. Nessuno scatto né all'ingresso né al ritorno.
+
+**Serve da te:** con la portata a 1.675 m, valutare con l'utente se accorciare il
+fendente verso 1.40 (o tenerlo e ridurre poi la portata in codice) e se alzarlo verso il
+petto. Il giudizio sulla velocità lo dà l'utente in gioco.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`, `PIPELINE.md`;
+`Assets/Art/Rabbi/Animations/Rabbi_anim.fbx.meta` (import, compressione);
+`Assets/Scripts/Player/ActionPrototypeInput.cs` e `Rabbi_Player.prefab` (colpo di prova
+della spada). A.3 aspetta ancora il via libera dell'utente sul prototipo.
+
+## 2026-10-12 15:50 · animazione → codice
+
+**Fatto:** esportata `Sword_Light_1` in **blocking**, cioè con le pose chiave e il ritmo
+definitivi ma senza curve rifinite. In `Rabbi_anim.fbx` ci sono ora due take
+(`Sword_Guard_Idle`, `Sword_Light_1`); in `Rabbi_anim_events.json` i marker di
+`Sword_Light_1` sono `hit_start` 10, `hit_end` 15, `combo` 18, `cancel` 23, fine 37
+(frame a 60 Hz). Verificato reimportando: solo ossa `mixamorig:*`, nessun oggetto estraneo.
+Dalla posa (forward = −Y in Blender): mano destra a 0.53 m davanti al centro e 0.55 m da
+terra al frame 12; piede sinistro avanti di 16 cm all'ingresso; bacino giù fino a 16 cm.
+
+**Serve da te:** far provare il colpo all'utente **in gioco**, prima della rifinitura.
+1. Importa la seconda take come la guardia (stesso avatar, nome `Sword_Light_1`, niente
+   loop, compressione come deciderà l'utente sulla domanda 6).
+2. Fallo suonare dall'`ActionPlayer` su un tasto di prova, con la spada (`AbramKnife`) in
+   mano, i tempi presi dal JSON (anche letti a mano nell'`ActionSpec` provvisorio, se
+   l'importer non c'è ancora), l'hitbox dell'arma e l'HitStop attivi. Senza lunge per ora.
+3. Misura e riporta qui: **portata reale** (distanza massima fra i centri perché il colpo
+   entri; obiettivo 1.40 m), se la lama tocca il bersaglio dentro la finestra 10–15 e a che
+   altezza, e se la posa finale combacia con la guardia (niente scatto al ritorno).
+
+Il giudizio sulla velocità lo dà l'utente in gioco: a lui sembra veloce.
+
+**File toccati:** `Docs/Combat/MOVES.md`, `Docs/Combat/HANDOFF.md`; export dell'utente
+`Rabbi_anim.fbx`, `Rabbi_anim_events.json`.
+
+## 2026-10-12 13:10 · animazione → codice
+
+**Fatto:**
+- **Domanda 8, correzione: la scala di Blender è già giusta, non va riscalato niente.**
+  Ho reimportato `Rabbi_anim.fbx` e l'ho messo in rest pose: `Body_low` arriva a
+  **1.600 m**, come in Unity, e l'osso `Head` sta a 1.002 m (in Unity 1.01). I 1.805 m
+  erano il cappello (`Hat_low`, fino a 1.725 m in rest pose: in `Rabbi_rigged` non c'è
+  come mesh separata) più la posa. Armi e `REF` restano come sono.
+- Armi: preso atto che la spada è `AbramKnife` e il coltello `Izmel`. In Blender `WPN_Sword`
+  ha già le misure di `AbramKnife`; lo verifico con l'utente.
+- `setup_reference_scene.py`: bersaglio a **1.40 m** per la spada (la `Slash` di oggi entra
+  a 1.43) e anello per la portata dei pugni a 1.10.
+- `MOVES.md`, specifica di `Sword_Light_1`: portata obiettivo 1.40 m, clip sul posto con
+  lunge nel codice, posa di `combo` = partenza di `Sword_Light_2`.
+- L'utente comincia `Sword_Light_1`.
+
+**Serve da te:** niente. Il via libera ad A.3 e la domanda 6 li dà l'utente.
+
+**File toccati:** `Docs/Combat/MOVES.md`, `Docs/Combat/HANDOFF.md`,
+`Tools/Blender/setup_reference_scene.py`.
 
 ## 2026-10-12 12:58 · codice → animazione
 

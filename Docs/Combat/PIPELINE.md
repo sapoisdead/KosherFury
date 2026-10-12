@@ -51,8 +51,10 @@ nella voce di handoff.
 
 ## Marker
 
-Pose marker dentro l'action (Action Editor › View › Show Pose Markers;
-Marker › Add Pose Marker). Una finestra va da `*_start` **incluso** a `*_end` **escluso**.
+Pose marker dentro l'action: nell'Action Editor, con l'armatura attiva, menu
+**Marker › Show Pose Markers** (in fondo al menu) attivo **prima** di premere `M`.
+Marker messi per errore nella scena: con Show Pose Markers spento, selezionarli e
+**Marker › Make Markers Local**. Una finestra va da `*_start` **incluso** a `*_end` **escluso**.
 In secondi: `(frame − frame_start) / fps`.
 
 | Marker | Significato | Serve per |
@@ -116,6 +118,9 @@ Compaiono solo le action con Fake User attivo.
   uno per FBX. I nemici faranno lo stesso con il proprio `<Personaggio>_rigged`.
   Bake into pose su XZ/Y/rotazione per tutte, **tranne** schivate e dash (XZ libero per
   il root motion). Loop solo per le clip `cyclic`.
+- **Compressione delle animazioni: Off** (decisione dell'utente, 12 ottobre). Il default
+  di Unity (*Keyframe Reduction*) ammorbidirebbe gli impatti secchi, come *Simplify* in
+  Blender, che infatti è a 0.
 - **Nomi delle clip**: l'FBX di Blender può chiamare le take `Armature|<action>`
   (visto in un test di export/reimport). Il nome valido è la parte dopo `|`.
 - **Importer** (menu `KosherFury/Combat/Import Move Markers`): legge il JSON e aggiorna

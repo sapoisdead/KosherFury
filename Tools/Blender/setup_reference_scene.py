@@ -154,15 +154,20 @@ def main():
     bpy.context.scene.camera = free_cam
 
     height = character_height(arm)
+    report = [
+        f"Il personaggio guarda verso {tuple(round(c) for c in fwd)}",
+        f"Bersaglio a {TARGET_DISTANCE} m, faccia anteriore a {TARGET_DISTANCE - CAPSULE_RADIUS:.2f} m",
+        f"Altezza del personaggio nella posa attuale: {height:.3f} m" if height
+        else "Altezza non misurata: nessuna mesh legata all'armatura",
+        f"Action nel file: {len(bpy.data.actions)}",
+        "Camera della scena: CAM_Game (CAM_Game_Lock = vista col lock)",
+    ]
     print("\n=== setup_reference_scene ===")
-    print(f"  Il personaggio guarda verso {tuple(round(c) for c in fwd)}")
-    print(f"  Bersaglio a {TARGET_DISTANCE} m, faccia anteriore a {TARGET_DISTANCE - CAPSULE_RADIUS:.2f} m")
-    if height:
-        print(f"  Altezza del personaggio nella posa attuale: {height:.3f} m")
-    else:
-        print("  Altezza non misurata: nessuna mesh legata all'armatura.")
-    print(f"  Action nel file: {len(bpy.data.actions)}")
-    print("  Camera della scena: CAM_Game (CAM_Game_Lock = spalla col lock; il lato va verificato in gioco)")
-
+    for line in report:
+        print("  " + line)
+    if not bpy.app.background:
+        bpy.context.window_manager.popup_menu(
+            lambda self, ctx: [self.layout.label(text=l) for l in report],
+            title="REF creata", icon="CHECKMARK")
 
 main()
