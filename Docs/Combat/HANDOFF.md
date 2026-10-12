@@ -30,6 +30,47 @@ Formato di una voce:
 
 ---
 
+## 2026-10-12 12:58 · codice → animazione
+
+**Fatto:** **A.2, prototipo `ActionPlayer`** (commit `ab563ae`). Mi fermo al checkpoint:
+serve la conferma dell'utente prima di A.3.
+
+- `Assets/Scripts/Combat/Actions/ActionPlayer.cs`, generico (niente del player): un
+  `PlayableGraph` con due slot alternati per il crossfade e una **propria uscita
+  sull'Animator, pesata sopra il controller di oggi**. Fuori dalle azioni il peso è 0 e
+  si vede il controller; durante l'azione è 1. Così il prototipo convive col sistema
+  vecchio senza toccarlo. Nel piano finale il controller ridotto diventerà un input del
+  grafo.
+- Le finestre attive si aprono dal **tempo dell'azione, in frame a 60 Hz**, confrontato
+  coi dati (`ActionSpec`, struttura provvisoria: in A.3 diventa `MoveData`). Gli
+  animation event delle clip vecchie sono spenti finché l'azione ha peso.
+- Lato player: `PlayerHitboxSource` (hitbox degli arti e dell'arma) e
+  `ActionPrototypeInput`, due azioni di prova su tasti liberi: **Quadrato / P** =
+  `Punch_right` coi tempi di oggi, **Triangolo / O** = `Dash_front` in root motion.
+
+**Misure** (Play Mode, passo fisso 1/240 s; HitStop in tempo reale):
+
+| Prova | Risultato |
+|---|---|
+| Colpo di prova (`Punch_right` ×1.96) | startup 0.412 s, attiva 0.154 s, fine 1.012 s; sistema vecchio: 0.412 / 0.146 / 1.008. Lo scarto residuo è un frame di HitStop (la Hitbox congela anche su un bersaglio invincibile) più un frame di osservazione del test |
+| Eventi vecchi | spenti durante l'azione, riaccesi dopo; il controller resta in idle |
+| Danno | 30 contro bersaglio a 0.95 m, come oggi (15 × 2) |
+| CombatState | Startup → Active → Recovery → None; `AttackId` +1 a ogni azione, anche ripetendo la stessa |
+| HitStop (fermo forzato di 0.5 s) | il tempo dell'azione si ferma e poi riparte. Un frame di scarto solo se il fermo parte fuori da `FixedUpdate`; i colpi veri partono da lì |
+| Catena sul secondo slot | secondo colpo in recovery, crossfade fra gli slot, nessun errore |
+| Scatto via `ActionPlayer` (`Dash_front`) | 0.909 m, dritto. Lo stesso clip dal controller di oggi: 0.949 m (3.797 / 4 di `dashRootMotionScale`). Lo spostamento della curva è 1.02 m: lo scarto rispetto alla curva c'è in tutti e due i sistemi |
+| Scatto vecchio con il prototipo presente | 3.957 m, identico a senza `ActionPlayer` |
+
+Nota tecnica: `averageSpeed` delle clip Humanoid è in unità normalizzate, non in metri
+(per il Rabbi va moltiplicato per `humanScale` = 0.614).
+
+**Serve da te:** niente. Domanda 6 (compressione delle clip) ancora aperta per l'utente.
+
+**File toccati:** `Assets/Scripts/Combat/Actions/` (nuovi), `Assets/Scripts/Player/
+PlayerHitboxSource.cs`, `ActionPrototypeInput.cs` (nuovi), `PlayerAnimator.cs`,
+`PlayerMovement.cs` (agganci minimi), `Rabbi_Player.prefab` (tre componenti);
+`Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-12 12:43 · codice → animazione
 
 **Fatto:** decisioni dell'utente, date in chat:
