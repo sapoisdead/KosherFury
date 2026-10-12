@@ -139,6 +139,7 @@ public class PlayerAnimator : MonoBehaviour
     private WeaponManager weaponManager;
     private Knockback knockback;
     private ActionPlayer actionPlayer;
+    private CombatActor combatActor;
 
     // postura: 0 = combat (a mani nude), 1 = con l'arma in pugno.
     // La postura pacifica e' stata rimossa: il player e' sempre in guardia.
@@ -158,6 +159,7 @@ public class PlayerAnimator : MonoBehaviour
         weaponManager = GetComponent<WeaponManager>();
         knockback = GetComponent<Knockback>();
         actionPlayer = GetComponent<ActionPlayer>();
+        combatActor = GetComponent<CombatActor>();
 
         foreach (var hb in GetComponentsInChildren<Hitbox>(true))
         {
@@ -261,7 +263,7 @@ public class PlayerAnimator : MonoBehaviour
         // altri colpi, quindi ne segue le tre fasi. Restandone fuori era l'unico
         // attacco senza armor sui frame attivi e senza recovery punibile — cioe'
         // l'unico che i nemici non potevano leggere.
-        // Durante un'azione dell'ActionPlayer (prototipo A.2) la fase la governa lui: il
+        // Durante una mossa del sistema nuovo (ActionPlayer) la fase la governa lui: il
         // controller sotto e' fermo in idle e la azzererebbe a ogni frame.
         if (actionPlayer == null || !actionPlayer.OwnsCombatState)
             combatState.UpdatePhase(inPunchState || inSlashState || inAreaSlashState, currentState.shortNameHash);
@@ -278,7 +280,8 @@ public class PlayerAnimator : MonoBehaviour
             if (canceledIntoAction || timedOut) EndParry();
         }
 
-        if (health != null)
+        // Durante parata e schivata del sistema nuovo i flag li governa CombatActor
+        if (health != null && (combatActor == null || !combatActor.OwnsHealthFlags))
         {
             // Attaccare NON rende piu' invulnerabili: la protezione durante il colpo
             // e' ora limitata ai soli frame attivi (CombatState.IsArmored), dove si

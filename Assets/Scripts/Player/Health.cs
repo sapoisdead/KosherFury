@@ -39,6 +39,13 @@ public class Health : MonoBehaviour
     // che deve richiamare un nuovo simp) a fare polling su IsDead ogni frame.
     public event System.Action OnDeath;
 
+    // Un colpo e' stato parato (TakeDamage ha trovato IsBlocking). Serve a chi gestisce la
+    // parata per distinguere quella riuscita da quella a vuoto.
+    public event System.Action OnParried;
+
+    // Stagger appena partito; l'argomento dice se viene da una parata subita.
+    public event System.Action<bool> OnStaggered;
+
     // Istante dell'ultimo colpo incassato (anche se parato). Serve all'IA per
     // ingaggiare chi la colpisce alle spalle, fuori dal cono visivo.
     public float LastDamagedTime { get; private set; } = -999f;
@@ -104,7 +111,11 @@ public class Health : MonoBehaviour
         // ti sta attaccando, ed e' un buon motivo per girarti
         LastDamagedTime = Time.time;
 
-        if (IsBlocking) return true;
+        if (IsBlocking)
+        {
+            OnParried?.Invoke();
+            return true;
+        }
 
         // Esecuzione: chi e' ancora stordito da una parata riuscita muore al colpo
         // successivo, qualunque sia il danno dell'arma. E' quello che rende la parata
@@ -148,6 +159,7 @@ public class Health : MonoBehaviour
         stunnedUntil = Time.time + hitStunDuration;
         stunnedFromParry = fromParry;
         animator?.SetTrigger(TakeHitHash);
+        OnStaggered?.Invoke(fromParry);
     }
 
     private void Die()

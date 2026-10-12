@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0afe9bbe323a40cfa38292cfd499303, type: 3}
+  m_Name: Legacy_Dash_Right
+  m_EditorClassIdentifier: Assembly-CSharp::MoveData
+  kind: 2
+  clip: {fileID: 7710395077679786901, guid: 3e6a5ec5067b844dd8368cb52f17a3d3, type: 3}
+  speed: 1.5
+  fadeIn: 0.03
+  fadeOut: 0.08
+  endFrame: -1
+  hitWindows: []
+  comboFrame: -1
+  cancelFrame: -1
+  parryStartFrame: -1
+  parryEndFrame: -1
+  whiffRecoveryFrames: 0
+  iframeStartFrame: 0
+  iframeEndFrame: 20.199997
+  rootMotion: 1
+  rootMotionScale: 4
+  damageMultiplier: 1
+  hitStop: 0.07
+  cameraShake: 0.35
+  knockback: 1
+  impactReaction: 2.5
+  reactionType: 0
+  armorWhileActive: 1
+  lungeDistance: 0
+  lungeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  nextLight: {fileID: 0}
+  nextHeavy: {fileID: 0}

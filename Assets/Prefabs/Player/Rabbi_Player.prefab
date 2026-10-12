@@ -552,7 +552,10 @@ PrefabInstance:
       addedObject: {fileID: 7354037617075719235}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1750504258201809199}
+      addedObject: {fileID: 4204107503133887362}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5750981428711458468}
   m_SourcePrefab: {fileID: 100100000, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}
 --- !u!4 &2296102834484063810 stripped
 Transform:
@@ -811,7 +814,7 @@ MonoBehaviour:
   leftHand: {fileID: 0}
   rightFoot: {fileID: 0}
   leftFoot: {fileID: 0}
---- !u!114 &1750504258201809199
+--- !u!114 &4204107503133887362
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -820,45 +823,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 5650684950552524458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd3add620c9224892a2102800676643d, type: 3}
+  m_Script: {fileID: 11500000, guid: ca6a22604bf7f4fb4b217d428cbfb122, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ActionPrototypeInput
-  attack:
-    name: Proto_Punch_Right
-    clip: {fileID: -6722069697309059768, guid: 76dd73d7c9e2444ab9eeb16fba0dd90a, type: 3}
-    speed: 1.96
-    fadeIn: 0.05
-    fadeOut: 0.15
-    isAttack: 1
-    rootMotion: 0
-    damageMultiplier: 2
-    windows:
-    - slot: 0
-      startFrame: 24.489798
-      endFrame: 33.061222
-  swordAttack:
-    name: Proto_Sword_Light_1
-    clip: {fileID: 1343954476253186574, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
-    speed: 1
-    fadeIn: 0.05
-    fadeOut: 0.1
-    isAttack: 1
-    rootMotion: 0
-    damageMultiplier: 2
-    windows:
-    - slot: 4
-      startFrame: 10
-      endFrame: 15
-  dash:
-    name: Proto_Dash_Front
-    clip: {fileID: 2869923769033524098, guid: 3e6a5ec5067b844dd8368cb52f17a3d3, type: 3}
-    speed: 1.5
-    fadeIn: 0.05
-    fadeOut: 0.1
-    isAttack: 0
-    rootMotion: 1
-    damageMultiplier: 0
-    windows: []
+  m_EditorClassIdentifier: Assembly-CSharp::CombatActor
+  lungeMinDistance: 0.9
+  lungeProbeRadius: 0.35
+--- !u!114 &5750981428711458468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5650684950552524458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3bc55e42f3664f039f437018efbb767, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatInput
+  inputBufferTime: 0.25
 --- !u!4 &7193262545030006739 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2412161367050800168, guid: dcfd0ba6382cf40dc948c8e02a45804c, type: 3}

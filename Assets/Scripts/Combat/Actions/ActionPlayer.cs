@@ -3,35 +3,35 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
-// Riproduce le azioni (colpi, schivate, parate) fuori dall'Animator Controller, con un
+// Riproduce le mosse (colpi, schivate, parate) fuori dall'Animator Controller, con un
 // PlayableGraph proprio. Generico: non sa chi lo usa ne' perche', riceve solo Play().
+// Chi decide QUALE mossa e QUANDO e' CombatActor.
 //
-// PROTOTIPO (Fase A.2). Il grafo ha una propria uscita sullo stesso Animator, che si
-// SOVRAPPONE al controller con un peso: 0 quando non c'e' azione (si vede il controller,
-// cioe' la locomozione di oggi), 1 durante l'azione. Il controller continua a girare
-// sotto, quindi tutto il resto del player funziona come prima. Nel piano finale il
-// controller verra' ridotto alla sola locomozione e diventera' un input di questo grafo.
+// Il grafo ha una propria uscita sullo stesso Animator, che si SOVRAPPONE al controller
+// con un peso: 0 quando non c'e' mossa (si vede il controller, cioe' la locomozione),
+// 1 durante la mossa. Il controller continua a girare sotto. Quando il controller sara'
+// ridotto alla sola locomozione potra' restare cosi' o diventare un input del grafo.
 //
 //   [AnimationClipPlayable slot A] \
 //                                   > AnimationMixerPlayable -> AnimationPlayableOutput (peso) -> Animator
 //   [AnimationClipPlayable slot B] /
 //
-// Due slot alternati: un'azione nuova entra nello slot libero e prende peso mentre
+// Due slot alternati: una mossa nuova entra nello slot libero e prende peso mentre
 // quella vecchia lo perde, cosi' due colpi in catena si fondono invece di scattare.
 //
-// I tempi delle finestre attive vengono dal tempo dell'azione confrontato con i dati,
-// non da animation event: gli eventi sono spenti finche' l'azione ha peso (vedi
+// Le finestre attive si aprono confrontando il tempo della mossa con il MoveData, non
+// con animation event: gli eventi sono spenti finche' la mossa ha peso (vedi
 // fireEvents), o le clip vecchie, che li hanno ancora, aprirebbero le hitbox due volte.
 //
 // HitStop congela l'Animator mettendone la velocita' a 0, ma un grafo proprio non la
-// guarda: per questo la velocita' della clip qui viene azzerata a mano finche' il
-// personaggio e' congelato. Il tempo dell'azione e' quello della clip, quindi si
-// ferma con lei.
+// guarda: per questo la velocita' della clip viene azzerata a mano finche' il
+// personaggio e' congelato. Il tempo della mossa e' quello della clip, quindi si
+// ferma con lei, e con lui tutto cio' che ne dipende (finestre, lunge).
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Animator))]
 public class ActionPlayer : MonoBehaviour
 {
-    public const float FrameRate = 60f;
+    public const float FrameRate = MoveData.FrameRate;
 
     private Animator animator;
     private CombatState combat;
@@ -44,7 +44,7 @@ public class ActionPlayer : MonoBehaviour
     private readonly float[] slotWeights = new float[2];
     private int activeSlot = -1;
 
-    private ActionSpec current;
+    private MoveData current;
     private bool[] windowOpened;
     private bool[] windowClosed;
     private bool finished = true;
@@ -56,21 +56,23 @@ public class ActionPlayer : MonoBehaviour
     private bool eventsSuppressed;
 
     public bool IsPlaying => !finished;
-    public ActionSpec Current => finished ? null : current;
+    public MoveData Current => finished ? null : current;
 
-    // Tempo di gioco dall'inizio dell'azione: tempo della clip / velocita'
+    // Tempo di gioco dall'inizio della mossa: tempo della clip / velocita'
     public float Elapsed { get; private set; }
     public float ElapsedFrames => Elapsed * FrameRate;
+    public float NormalizedTime => IsPlaying && current.Duration > 0f ? Mathf.Clamp01(Elapsed / current.Duration) : 0f;
 
-    // L'azione in corso governa CombatState: chi altrimenti lo aggiornerebbe (il vecchio
+    // La mossa in corso governa CombatState: chi altrimenti lo aggiornerebbe (il vecchio
     // PlayerAnimator, che lo deriva dagli stati del controller) deve astenersi.
-    public bool OwnsCombatState => IsPlaying && current.isAttack;
+    public bool OwnsCombatState => IsPlaying && current.kind == MoveKind.Attack;
 
-    // Root motion dell'azione: chi applica lo spostamento (PlayerMovement, in
-    // OnAnimatorMove) lo deve prendere solo quando l'azione lo vuole.
+    // Root motion della mossa: chi applica lo spostamento (PlayerMovement, in
+    // OnAnimatorMove) lo prende solo quando la mossa lo vuole, gia' scalato.
     public bool WantsRootMotion => IsPlaying && current.rootMotion && outputWeight > 0f;
+    public float RootMotionScale => IsPlaying ? current.rootMotionScale : 1f;
 
-    public event Action<ActionSpec> Finished;
+    public event Action<MoveData> Finished;
 
     private void Awake()
     {
@@ -96,11 +98,11 @@ public class ActionPlayer : MonoBehaviour
 
     // ---------------------------------------------------------------- API
 
-    public void Play(ActionSpec spec)
+    public void Play(MoveData move)
     {
-        if (spec == null || spec.clip == null) return;
+        if (move == null || move.clip == null) return;
 
-        // l'azione interrotta chiude le sue finestre: una hitbox lasciata aperta
+        // la mossa interrotta chiude le sue finestre: una hitbox lasciata aperta
         // continuerebbe a colpire durante quella nuova
         CloseAllWindows();
 
@@ -111,15 +113,15 @@ public class ActionPlayer : MonoBehaviour
             slots[slot].Destroy();
         }
 
-        var clipPlayable = AnimationClipPlayable.Create(graph, spec.clip);
+        var clipPlayable = AnimationClipPlayable.Create(graph, move.clip);
         clipPlayable.SetApplyFootIK(false);
-        clipPlayable.SetSpeed(spec.speed);
+        clipPlayable.SetSpeed(move.speed);
         clipPlayable.SetTime(0);
-        clipPlayable.SetDuration(spec.clip.length);
+        clipPlayable.SetDuration(move.clip.length);
         graph.Connect(clipPlayable, 0, mixer, slot);
         slots[slot] = clipPlayable;
 
-        // senza un'azione visibile il nuovo slot parte gia' pieno: il crossfade lo fa
+        // senza una mossa visibile il nuovo slot parte gia' pieno: il crossfade lo fa
         // il peso dell'uscita, dalla locomozione
         if (outputWeight <= 0f)
         {
@@ -128,21 +130,25 @@ public class ActionPlayer : MonoBehaviour
         }
 
         activeSlot = slot;
-        current = spec;
+        current = move;
         Elapsed = 0f;
-        windowOpened = new bool[spec.windows.Length];
-        windowClosed = new bool[spec.windows.Length];
+        windowOpened = new bool[move.hitWindows.Length];
+        windowClosed = new bool[move.hitWindows.Length];
         finished = false;
         fadingOut = false;
-        fadeTime = Mathf.Max(spec.fadeIn, 0.0001f);
+        fadeTime = Mathf.Max(move.fadeIn, 0.0001f);
 
         SuppressEvents();
 
-        if (spec.isAttack)
+        // None e poi Startup: cosi' AttackId cambia anche se la stessa mossa si ripete.
+        // Una mossa che non e' un attacco riporta la fase a None (una schivata che
+        // annulla un colpo non deve lasciarlo in Recovery).
+        combat.UpdatePhase(false, 0);
+        combat.ArmorInActive = true;
+        if (move.kind == MoveKind.Attack)
         {
-            // None e poi Startup: cosi' AttackId cambia anche se la stessa azione si ripete
-            combat.UpdatePhase(false, 0);
-            combat.UpdatePhase(true, Animator.StringToHash(spec.name));
+            combat.ArmorInActive = move.armorWhileActive;
+            combat.UpdatePhase(true, Animator.StringToHash(move.name));
         }
     }
 
@@ -208,7 +214,7 @@ public class ActionPlayer : MonoBehaviour
     private void UpdateWindows()
     {
         float frame = ElapsedFrames;
-        var windows = current.windows;
+        var windows = current.hitWindows;
         for (int i = 0; i < windows.Length; i++)
         {
             if (!windowOpened[i] && frame >= windows[i].startFrame)
@@ -226,15 +232,15 @@ public class ActionPlayer : MonoBehaviour
 
     private void OpenWindow(HitboxSlot slot)
     {
-        if (current.isAttack) combat.OpenActiveWindow();
+        if (current.kind == MoveKind.Attack) combat.OpenActiveWindow();
         Hitbox hitbox = hitboxSource?.GetHitbox(slot);
         float damage = (hitboxSource?.BaseDamage ?? 0f) * current.damageMultiplier;
-        if (hitbox != null) hitbox.Activate(damage);
+        if (hitbox != null) hitbox.Activate(damage, current);
     }
 
     private void CloseWindow(HitboxSlot slot)
     {
-        if (current.isAttack && !AnyWindowOpen()) combat.CloseActiveWindow();
+        if (current.kind == MoveKind.Attack && !AnyWindowOpen()) combat.CloseActiveWindow();
         Hitbox hitbox = hitboxSource?.GetHitbox(slot);
         if (hitbox != null) hitbox.Deactivate();
     }
@@ -249,12 +255,12 @@ public class ActionPlayer : MonoBehaviour
     private void CloseAllWindows()
     {
         if (finished || current == null) return;
-        for (int i = 0; i < current.windows.Length; i++)
+        for (int i = 0; i < current.hitWindows.Length; i++)
         {
             if (windowOpened[i] && !windowClosed[i])
             {
                 windowClosed[i] = true;
-                CloseWindow(current.windows[i].slot);
+                CloseWindow(current.hitWindows[i].slot);
             }
         }
     }
@@ -262,7 +268,8 @@ public class ActionPlayer : MonoBehaviour
     private void Finish(float fade)
     {
         CloseAllWindows();
-        if (current.isAttack) combat.UpdatePhase(false, 0);
+        if (current.kind == MoveKind.Attack) combat.UpdatePhase(false, 0);
+        combat.ArmorInActive = true;
         finished = true;
         fadingOut = true;
         if (fade > 0f) fadeTime = fade;

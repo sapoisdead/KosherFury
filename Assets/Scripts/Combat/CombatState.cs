@@ -23,7 +23,11 @@ public class CombatState : MonoBehaviour
 
     // Sui frame attivi si incassa il danno ma non si viene interrotti: e' cio' che
     // rende possibili gli scambi colpo su colpo invece del solo "chi parte prima vince".
-    public bool IsArmored => Phase == AttackPhase.Active;
+    public bool IsArmored => Phase == AttackPhase.Active && ArmorInActive;
+
+    // Una mossa puo' rinunciare all'armor sui frame attivi (MoveData.armorWhileActive).
+    // Vero di default: chi non lo tocca (i nemici, il player vecchio) si comporta come prima.
+    public bool ArmorInActive { get; set; } = true;
 
     // Colpo gia' esaurito ma animazione ancora in corso: non puo' reagire.
     public bool IsPunishable => Phase == AttackPhase.Recovery;
