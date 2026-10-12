@@ -20,4 +20,4 @@ MonoBehaviour:
   dodgeBack: {fileID: 11400000, guid: 2aa10b031c76d4590ac7545db3afaeab, type: 2}
   dodgeLeft: {fileID: 11400000, guid: 5e21ebefadfe940c6aa5766b3dcbb493, type: 2}
   dodgeRight: {fileID: 11400000, guid: b8a24a0c18d4944a8815f5878bb61c45, type: 2}
-  hitReaction: {fileID: 0}
+  hitReaction: {fileID: 11400000, guid: 0a7c6878b4a104b469a2ee7eacb4ab85, type: 2}

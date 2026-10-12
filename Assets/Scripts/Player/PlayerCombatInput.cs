@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // Lato player del sistema d'azioni: traduce i comandi in richieste al CombatActor e
 // tiene le cose che sono solo del player, cioe' il buffer d'input, il bersaglio
@@ -10,11 +9,9 @@ using UnityEngine.InputSystem;
 // frame in cui si apre la finestra di combo, e uno premuto troppo presto scade da solo
 // invece di impegnare il personaggio.
 //
-// FASE A.3: i comandi arrivano da tasti di prova, letti direttamente dai dispositivi,
-// cosi' il sistema vecchio resta sui comandi veri. Funziona solo con un'arma che ha un
-// Moveset (oggi la spada). In A.4 i comandi veri passano di qui.
-//   P / Quadrato   colpo leggero         L / Triangolo   colpo pesante
-//   K / L2         parata                O               schivata (direzione da WASD; ferma = indietro)
+// I comandi arrivano da PlayerMovement, che riceve quelli del PlayerInput (Punch,
+// AreaSlash, Block, Dodge) e li manda qui quando l'arma in mano ha un Moveset. Le regole
+// che sono solo del player restano la': la schivata solo agganciati, il pesante solo armati.
 [DisallowMultipleComponent]
 [RequireComponent(typeof(CombatActor))]
 public class PlayerCombatInput : MonoBehaviour
@@ -51,29 +48,31 @@ public class PlayerCombatInput : MonoBehaviour
             return;
         }
 
-        ReadCommands();
         TryBuffered();
     }
 
-    private void ReadCommands()
-    {
-        var keys = Keyboard.current;
-        var pad = Gamepad.current;
+    // L'arma in mano usa il sistema nuovo. Letto sull'arma e non sul CombatActor, perche'
+    // il comando puo' arrivare prima del primo Update dopo un cambio d'arma.
+    public bool HasMoveset => weapons != null && weapons.CurrentWeapon != null && weapons.CurrentWeapon.moveset != null;
 
-        if ((keys != null && keys.pKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame)) Buffer(Command.Light);
-        if ((keys != null && keys.lKey.wasPressedThisFrame) || (pad != null && pad.buttonNorth.wasPressedThisFrame)) Buffer(Command.Heavy);
-        if ((keys != null && keys.kKey.wasPressedThisFrame) || (pad != null && pad.leftTrigger.wasPressedThisFrame)) Buffer(Command.Parry);
-        if (keys != null && keys.oKey.wasPressedThisFrame)
-        {
-            bufferedDirection = DodgeFromKeys(keys);
-            Buffer(Command.Dodge);
-        }
+    public void Light() => Buffer(Command.Light);
+    public void Heavy() => Buffer(Command.Heavy);
+    public void Parry() => Buffer(Command.Parry);
+
+    public void Dodge(DodgeDirection direction)
+    {
+        bufferedDirection = direction;
+        Buffer(Command.Dodge);
     }
 
+    // Il comando prova a partire subito, nello stesso frame: passando dal solo Update
+    // si perderebbe un frame, e per una parata di reazione conta.
     private void Buffer(Command command)
     {
         buffered = command;
         bufferedTime = Time.time;
+        actor.Moveset = weapons != null && weapons.CurrentWeapon != null ? weapons.CurrentWeapon.moveset : null;
+        TryBuffered();
     }
 
     private void TryBuffered()
@@ -94,14 +93,5 @@ public class PlayerCombatInput : MonoBehaviour
             _ => false,
         };
         if (accepted) buffered = Command.None;
-    }
-
-    // Direzione dominante, relativa a dove guarda il personaggio (sotto lock, il bersaglio)
-    private static DodgeDirection DodgeFromKeys(Keyboard keys)
-    {
-        float x = (keys.dKey.isPressed ? 1f : 0f) - (keys.aKey.isPressed ? 1f : 0f);
-        float y = (keys.wKey.isPressed ? 1f : 0f) - (keys.sKey.isPressed ? 1f : 0f);
-        if (Mathf.Abs(x) > Mathf.Abs(y)) return x > 0f ? DodgeDirection.Right : DodgeDirection.Left;
-        return y > 0f ? DodgeDirection.Forward : DodgeDirection.Back;
     }
 }

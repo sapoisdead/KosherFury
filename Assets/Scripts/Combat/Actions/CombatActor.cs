@@ -197,8 +197,9 @@ public class CombatActor : MonoBehaviour
 
         if (Current == State.HitReaction)
         {
-            // senza clip di reazione nel moveset la durata e' quella dello stordimento
-            if (!player.IsPlaying && (health == null || !health.IsStunned)) Return();
+            // senza clip di reazione nel moveset la durata e' quella dello stordimento;
+            // con la clip la chiude OnMoveFinished
+            if (move == null && (health == null || !health.IsStunned)) Return();
             return;
         }
 
@@ -248,7 +249,8 @@ public class CombatActor : MonoBehaviour
             return;
         }
 
-        if (Current == State.HitReaction) return;   // la chiude LateUpdate
+        // con una clip di reazione la reazione finisce con lei; lo stordimento di Health
+        // (hitStunDuration) e' un tempo per l'IA, non deve bloccare chi ha la clip
         Return();
     }
 

@@ -32,6 +32,11 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     private Animator anim;
     private ActionPlayer actionPlayer;
     private CombatActor combatActor;
+    private PlayerCombatInput combatInput;
+
+    // L'arma in mano ha un Moveset: i comandi d'attacco, parata e schivata vanno al
+    // sistema d'azioni nuovo invece che al PlayerAnimator vecchio.
+    private bool UsesActions => combatInput != null && combatInput.HasMoveset;
 
     // Riferimento congelato del root motion della mossa in corso (come dashFrame)
     private MoveData rootMotionMove;
@@ -79,6 +84,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         anim = GetComponent<Animator>();
         actionPlayer = GetComponent<ActionPlayer>();
         combatActor = GetComponent<CombatActor>();
+        combatInput = GetComponent<PlayerCombatInput>();
 
         if (Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -161,6 +167,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     {
         if (InputLocked) return;
         if (!value.isPressed) return;
+        if (UsesActions) { combatInput.Light(); return; }
         animator.TriggerPunch();
     }
 
@@ -172,6 +179,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         if (InputLocked) return;
         if (!value.isPressed) return;
         if (!animator.IsArmed) return;
+        if (UsesActions) { combatInput.Heavy(); return; }
         animator.TriggerAreaSlash();
     }
 
@@ -179,6 +187,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     {
         if (InputLocked) return;
         if (!value.isPressed) return;
+        if (UsesActions) { combatInput.Parry(); return; }
         animator.TriggerParry();
     }
 
@@ -244,6 +253,20 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
             bool forward = moveInput.y > 0f;
             dashDirection = (forward ? toEnemy : -toEnemy).normalized;
             dir = forward ? PlayerAnimator.DashDirection.Front : PlayerAnimator.DashDirection.Back;
+        }
+
+        // Con il sistema nuovo la schivata e' una mossa del Moveset: il root motion lo
+        // applica OnAnimatorMove, nel riferimento congelato alla partenza.
+        if (UsesActions)
+        {
+            combatInput.Dodge(dir switch
+            {
+                PlayerAnimator.DashDirection.Left  => DodgeDirection.Left,
+                PlayerAnimator.DashDirection.Right => DodgeDirection.Right,
+                PlayerAnimator.DashDirection.Front => DodgeDirection.Forward,
+                _                                  => DodgeDirection.Back,
+            });
+            return;
         }
 
         // Niente rotazione: le clip di scatto sono animate come spostamenti rispetto
@@ -328,13 +351,16 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         // alto): annullare l'attacco con una schivata resta possibile.
         // Anche una mossa del sistema nuovo (CombatActor) e' un impegno, comprese la
         // recovery a vuoto della parata e la reazione al colpo. Il suo spostamento, se
-        // c'e', lo portano il lunge (MoveBy) e il root motion (OnAnimatorMove); per
-        // questo l'avanzamento agganciato del sistema vecchio qui non si somma.
+        // c'e', lo portano il lunge (MoveBy) e il root motion (OnAnimatorMove).
+        // L'avanzamento agganciato di oggi resta solo per i colpi SENZA lunge (tutti
+        // quelli migrati con le clip vecchie): con il lunge i due si sommerebbero.
         bool inAction = (actionPlayer != null && actionPlayer.IsPlaying) || (combatActor != null && combatActor.IsBusy);
         if ((animator != null && animator.IsCommittedToAttack) || inAction)
         {
             if (locked) FaceLockTarget();
-            Vector3 advance = inAction ? Vector3.zero : AttackAdvance(locked);
+            bool attackWithoutLunge = combatActor != null && combatActor.Current == CombatActor.State.Attack
+                                      && (combatActor.CurrentMove == null || combatActor.CurrentMove.lungeDistance <= 0f);
+            Vector3 advance = !inAction || attackWithoutLunge ? AttackAdvance(locked) : Vector3.zero;
             controller.Move((advance + velocity) * Time.deltaTime);
             return;
         }

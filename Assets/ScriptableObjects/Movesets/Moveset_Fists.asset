@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19445b6e0460841c2a1c4fda0e7506ee, type: 3}
+  m_Name: Moveset_Fists
+  m_EditorClassIdentifier: Assembly-CSharp::Moveset
+  light: {fileID: 11400000, guid: 6c42e92885c8f4799835f4ba0fbeee4d, type: 2}
+  heavy: {fileID: 0}
+  parry: {fileID: 11400000, guid: 8a9da191770514dc1a0fbba9925ffc1a, type: 2}
+  riposte: {fileID: 0}
+  dodgeForward: {fileID: 11400000, guid: 61fb87801ef4e4d558e8bf3acc8c0a3b, type: 2}
+  dodgeBack: {fileID: 11400000, guid: 2aa10b031c76d4590ac7545db3afaeab, type: 2}
+  dodgeLeft: {fileID: 11400000, guid: 5e21ebefadfe940c6aa5766b3dcbb493, type: 2}
+  dodgeRight: {fileID: 11400000, guid: b8a24a0c18d4944a8815f5878bb61c45, type: 2}
+  hitReaction: {fileID: 11400000, guid: 0a7c6878b4a104b469a2ee7eacb4ab85, type: 2}
