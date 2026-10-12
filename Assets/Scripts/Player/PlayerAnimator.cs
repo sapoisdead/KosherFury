@@ -145,6 +145,14 @@ public class PlayerAnimator : MonoBehaviour
     private Knockback knockback;
     private readonly Dictionary<int, MoveData> movesByState = new();
 
+    // Punto della clip (normalizzato) da cui un colpo in coda puo' partire, letto
+    // dall'evento OnComboWindow; -1 se la clip non ce l'ha. In cache per clip:
+    // AnimationClip.events alloca un array nuovo a ogni lettura.
+    private readonly Dictionary<AnimationClip, float> comboWindowByClip = new();
+    private const string ComboWindowEvent = nameof(OnComboWindow);
+    // Il gate fisso di prima, per le clip senza OnComboWindow
+    private const float FallbackComboGate = 0.5f;
+
     // postura: 0 = combat (a mani nude), 1 = con l'arma in pugno.
     // La postura pacifica e' stata rimossa: il player e' sempre in guardia.
     private float currentStance;
@@ -312,7 +320,7 @@ public class PlayerAnimator : MonoBehaviour
             }
 
             bool inSlash = IsInAnyState(state.shortNameHash, SlashStates);
-            if (!inSlash || state.normalizedTime >= 0.5f)
+            if (!inSlash || ComboWindowReached(state))
             {
                 slashQueued = false;
                 FireSlash();
@@ -336,7 +344,7 @@ public class PlayerAnimator : MonoBehaviour
             }
 
             bool inPunch = IsInAnyState(state.shortNameHash, PunchStates);
-            if (!inPunch || state.normalizedTime >= 0.5f)
+            if (!inPunch || ComboWindowReached(state))
             {
                 punchQueued = false;
                 FirePunch();
@@ -383,6 +391,47 @@ public class PlayerAnimator : MonoBehaviour
     // una percentuale fissa della clip, che si disallinea ogni volta che l'anim
     // viene rifatta con un ritmo diverso.
     public void OnParryEnd() => EndParry();
+
+    // Animation event sulle clip d'attacco: da qui il colpo in coda puo' partire.
+    // Il metodo serve solo come ricevitore (senza, Unity segnala l'evento come
+    // orfano): il gate legge il tempo dell'evento dalla clip, in ComboWindowReached.
+    // Un flag acceso qui sarebbe fragile: resterebbe vero rientrando nello stesso
+    // stato in una combo successiva, e un evento scattato durante la transizione
+    // d'ingresso verrebbe azzerato dal cambio di stato.
+    public void OnComboWindow() { }
+
+    // Il colpo in coda parte dal punto segnato da OnComboWindow; se la clip non ha
+    // l'evento, dalla meta' della clip come prima. Attenzione: la transizione di
+    // catena nel controller ha comunque il suo exit time (0.65 su tutte oggi), e il
+    // trigger lo aspetta. Un OnComboWindow prima di quel punto non anticipa niente.
+    private bool ComboWindowReached(AnimatorStateInfo state)
+    {
+        float gate = FallbackComboGate;
+        var clips = animator.GetCurrentAnimatorClipInfo(0);
+        if (clips.Length > 0 && clips[0].clip != null)
+        {
+            float window = ComboWindowOf(clips[0].clip);
+            if (window >= 0f) gate = window;
+        }
+        return state.normalizedTime >= gate;
+    }
+
+    private float ComboWindowOf(AnimationClip clip)
+    {
+        if (comboWindowByClip.TryGetValue(clip, out float cached)) return cached;
+
+        float window = -1f;
+        foreach (var e in clip.events)
+            if (e.functionName == ComboWindowEvent)
+            {
+                // a runtime il time degli eventi e' in secondi, non normalizzato
+                window = clip.length > 0f ? e.time / clip.length : 0f;
+                break;
+            }
+
+        comboWindowByClip[clip] = window;
+        return window;
+    }
 
     private void EndParry()
     {
