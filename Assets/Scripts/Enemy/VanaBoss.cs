@@ -12,18 +12,22 @@ using BehaviourTree;
 // esaurito, ed esegue la sequenza finale una volta che anche le guardie sono
 // morte.
 //
-// Vana non attacca mai in questa fase: le fasi "di transizione animata" (ordine
-// di scudo, richiamo, rilascio, sequenza finale) sospendono prossimita' e
-// richiami finche' non si torna a Idle, cosi' un evento non interrompe mai
-// un'animazione a meta'.
+// Le fasi "di transizione animata" (ordine di scudo, richiamo, rilascio,
+// sequenza finale) sospendono prossimita' e richiami finche' non si torna a
+// Idle, cosi' un evento non interrompe mai un'animazione a meta'. I due
+// attacchi speciali (Cast_1 proiettile a distanza, Cast_2 radiale a terra —
+// vedi SpecialAttackGate) sono l'eccezione voluta: girano anche durante
+// quelle fasi (a parte il momento esatto del lancio, che comunque rispetta
+// phase == Idle da dentro TryFireRangedAttack/TryFireRadialSlam), perche'
+// altrimenti smetterebbero di scattare per l'intera fase 2 — vedi il commento
+// su SpecialAttackGate.
 //
 // E' un vero Behaviour Tree (BehaviourTreeBase, come ValerioBT/GuardianBT), ma
 // la logica interna resta quasi tutta quella di prima: le coroutine che
 // aspettano la fine di un'animazione (WaitForStateEnd) sono delicate e gia'
 // testate, riscriverle da capo come nodi non avrebbe aggiunto nulla se non
 // rischio. I nodi sotto sono wrapper sottili che chiamano dentro gli stessi
-// metodi privati di prima: e' cosi' che in futuro si aggiunge un nodo fratello
-// (es. un attacco speciale) senza toccare il collaudato.
+// metodi privati di prima.
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Animator))]
 public class VanaBoss : BehaviourTreeBase
@@ -67,6 +71,36 @@ public class VanaBoss : BehaviourTreeBase
     [Tooltip("Quante guardie passano all'attacco per ondata. Il rilascio e' graduale a ondate: ne partono queste, e la successiva parte SOLO quando sono state uccise tutte quelle dell'ondata in corso (uccidendone una non ne arriva subito un'altra). Le altre restano in formazione (immuni a flinch, knockback azzerato) e l'anello si stringe sui rimasti: lo scudo si assottiglia un'ondata per volta invece di sparire tutto insieme.")]
     [SerializeField] private int releaseBatchSize = 3;
 
+    [Header("Attacco a distanza (Cast_1)")]
+    [Tooltip("Prefab del proiettile (Combat/Projectile). Lasciare vuoto disattiva l'attacco senza toccare il resto dell'albero.")]
+    [SerializeField] private Projectile projectilePrefab;
+    [Tooltip("Punto di lancio, condiviso anche dall'attacco radiale (Cast_2): la sfera compare li' in entrambi i casi. Se vuoto, si usa la posizione di Vana con un offset in avanti e in alto (segnaposto finche' non c'e' un osso mano/bocca da assegnare).")]
+    [SerializeField] private Transform projectileSpawnPoint;
+    [Tooltip("Non spara se il player e' piu' vicino di cosi'. Deve restare oltre radialSlamMaxRange: sotto quella soglia ci pensa l'attacco radiale, i due range non devono sovrapporsi.")]
+    [SerializeField] private float rangedAttackMinRange = 8f;
+    [Tooltip("Non spara se il player e' piu' lontano di cosi'.")]
+    [SerializeField] private float rangedAttackMaxRange = 30f;
+    [Tooltip("Tempo minimo fra un lancio e il successivo.")]
+    [SerializeField] private float rangedAttackCooldown = 4f;
+
+    [Header("Attacco radiale (Cast_2)")]
+    [Tooltip("Prefab della sfera 'in mano' che Vana sbatte a terra (nessuno script, solo un segnaposto visivo: VanaBoss ne controlla tutto il ciclo di vita). Lasciare vuoto disattiva l'attacco senza toccare il resto dell'albero.")]
+    [SerializeField] private GameObject slamOrbPrefab;
+    [Tooltip("Prefab dell'onda d'urto (Combat/RadialSlam), istanziato nel punto d'impatto a terra.")]
+    [SerializeField] private RadialSlam radialSlamPrefab;
+    [Tooltip("Non lo usa se il player e' piu' lontano di cosi': deve restare entro rangedAttackMinRange (default 8m su entrambi), altrimenti il cerchio non arriverebbe mai a toccarlo. Coerente col maxRadius del prefab RadialSlam.")]
+    [SerializeField] private float radialSlamMaxRange = 8f;
+    [Tooltip("Tempo minimo fra uno slam e il successivo.")]
+    [SerializeField] private float radialSlamCooldown = 5f;
+
+    [Header("Necromanzia (fase 2, riusa l'esatta clip/trigger di Cast_1)")]
+    [Tooltip("Il DemonVale completo (DemonValeBT), gia' pronto a combattere. Lasciare vuoto disattiva la necromanzia senza toccare il resto dell'albero.")]
+    [SerializeField] private DemonValeBT demonValePrefab;
+    [Tooltip("Variante 'necromantica' del dardo (Combat/NecromancyBolt): stessa messa in scena di Projectile ma colore/VFX diversi e nessun danno — vola verso il cadavere invece che verso il player. Lasciare vuoto disattiva la necromanzia senza toccare il resto dell'albero.")]
+    [SerializeField] private NecromancyBolt necromancyBoltPrefab;
+    [Tooltip("Quanti DemonVale rievocati possono essere vivi in scena contemporaneamente. Oltre questo tetto Vana non rievoca altri cadaveri finche' uno non muore (il cadavere resta comunque in coda, verra' rievocato appena si libera uno slot).")]
+    [SerializeField] private int maxConcurrentDemons = 3;
+
     private readonly List<ValerioBT> activeMinions = new();
 
     private Phase phase = Phase.Idle;
@@ -75,12 +109,37 @@ public class VanaBoss : BehaviourTreeBase
     private int totalSpawned;
     private bool budgetExhausted;
     private bool guardiansDeployed;
+    // Condiviso da entrambi gli attacchi speciali: Vana non puo' mai avere
+    // Cast_1 e Cast_2 in corso insieme, userebbero comunque lo stesso layer
+    // dell'Animator.
+    private bool castingSpecialAttack;
+    private float nextRangedAttackTime;
+    private bool hasRangedAttackParam;
+    private Projectile pendingProjectile;
+    private float nextSlamTime;
+    private bool hasRadialSlamParam;
+    private GameObject pendingSlamOrb;
+
+    // Cadaveri di guardie non ancora rievocati: popolato via Health.OnDeath
+    // sottoscritto in Awake (guardianSimps e' gia' valorizzato dall'Inspector
+    // a quel punto, a differenza dei simp normali registrati a runtime).
+    private readonly List<GuardianBT> deadGuardianCorpses = new();
+    // DemonVale attualmente vivi, rievocati da Vana: serve solo per il tetto.
+    private readonly List<DemonValeBT> activeDemons = new();
+    // Bersaglio del cast di necromanzia in corso: letto da OnCastSpawn per
+    // decidere se questo Cast_1 e' un attacco normale o una rievocazione.
+    private GuardianBT pendingNecromancyTarget;
+    private NecromancyBolt pendingNecromancyBolt;
 
     private static readonly int ShieldOrderHash = Animator.StringToHash("Shield_order");
     private static readonly int ReleaseOrderHash = Animator.StringToHash("Release_order");
     private static readonly int CallSimpHash = Animator.StringToHash("Call_simp");
     private static readonly int NoMoreSimpsHash = Animator.StringToHash("No_more_simps");
     private static readonly int DefeatIdleHash = Animator.StringToHash("Defeat_idle");
+    private static readonly int RangedAttackHash = Animator.StringToHash("Ranged_attack");
+    private static readonly int CastStateHash = Animator.StringToHash("Cast_1");
+    private static readonly int RadialSlamHash = Animator.StringToHash("Radial_slam");
+    private static readonly int Cast2StateHash = Animator.StringToHash("Cast_2");
 
     private void Awake()
     {
@@ -93,6 +152,28 @@ public class VanaBoss : BehaviourTreeBase
         // la finisce all'istante indipendentemente dalla vita rimasta.
         health.AlwaysExecutable = false;
         health.OnDeath += () => phase = Phase.Dead;
+
+        // I trigger 'Ranged_attack'/'Radial_slam' potrebbero non esistere ancora
+        // nel controller (animazione non ancora collegata): senza questo
+        // controllo SetTrigger stamperebbe un warning a ogni lancio finche' non
+        // verra' aggiunto, stesso schema di Health.hasStunnedParam.
+        foreach (var p in animator.parameters)
+        {
+            if (p.nameHash == RangedAttackHash) hasRangedAttackParam = true;
+            if (p.nameHash == RadialSlamHash) hasRadialSlamParam = true;
+        }
+
+        // Le guardie sono gia' in scena dall'inizio (roster fisso via
+        // Inspector), non spawnate a runtime come i simp normali: la
+        // sottoscrizione va fatta qui, non al momento della morte.
+        // Health.OnDeath scatta prima che GuardianBT.OnDisable tolga la
+        // guardia dal roster di GuardianFormation, quindi non c'e' corsa.
+        foreach (var guardian in guardianSimps)
+        {
+            if (guardian == null) continue;
+            var h = guardian.GetComponent<Health>();
+            if (h != null) h.OnDeath += () => OnGuardianDeath(guardian);
+        }
     }
 
     // BehaviourTreeBase aspetta gia' PlayerManager.Instance.PlayerTransform
@@ -103,7 +184,13 @@ public class VanaBoss : BehaviourTreeBase
         player = PlayerManager.Instance.PlayerTransform;
         playerMovement = player.GetComponent<PlayerMovement>();
 
-        return new Sequence(new List<Node>
+        // SpecialAttackGate avvolge tutto il resto: entrambi gli attacchi
+        // devono poter scattare anche in fase 2 (guardie rilasciate), quando
+        // FinalSequenceWatch ritorna Running per l'intera durata (aspetta la
+        // morte dell'ultima guardia) e da solo bloccherebbe il Selector prima
+        // che arrivi a valutare qualunque fratello messo li' dentro. Vedi
+        // SpecialAttackGate.
+        return new SpecialAttackGate(this, new Sequence(new List<Node>
         {
             new PhaseIsIdleCheck(this),
             new Selector(new List<Node>
@@ -111,7 +198,7 @@ public class VanaBoss : BehaviourTreeBase
                 new FinalSequenceWatch(this),
                 new GuardianDeploymentWatch(this),
             })
-        });
+        }));
     }
 
     // ---------------------------------------------------------------- nodi
@@ -153,6 +240,43 @@ public class VanaBoss : BehaviourTreeBase
         {
             boss.UpdateProximity();
             return boss.phase != Phase.Idle ? NodeState.Running : NodeState.Failure;
+        }
+    }
+
+    // Valuta il controllo di ENTRAMBI gli attacchi speciali ad OGNI frame,
+    // PRIMA di delegare al figlio (il resto dell'albero, invariato) — e ne
+    // ritorna il risultato cosi' com'e', senza aggiungere niente al proprio: a
+    // BehaviourTreeBase.Update() non importa cosa torna root.Evaluate(), lo
+    // scarta. Non e' un nodo del Selector proprio perche' li' dentro
+    // FinalSequenceWatch puo' restare Running per tutta la fase 2 (aspetta la
+    // morte dell'ultima guardia) e bloccherebbe in eterno qualunque fratello:
+    // stando FUORI da quella catena, i lanci restano possibili sia prima del
+    // dispiegamento sia dopo il rilascio delle guardie. Le condizioni vere e
+    // proprie (fase Idle, guardie gia' dispiegate, range, cooldown, lock
+    // condiviso) restano tutte dentro TryFireRangedAttack/TryFireRadialSlam,
+    // ciascuno controlla castingSpecialAttack da solo: qui e' solo il punto
+    // d'aggancio, non serve ripetere il controllo. Non serve nessuna logica di
+    // scelta fra i due: i loro range sono partizionati apposta (vicino =
+    // radiale, lontano = proiettile) e il lock condiviso impedisce comunque
+    // che partano insieme.
+    private class SpecialAttackGate : Node
+    {
+        private readonly VanaBoss boss;
+        private readonly Node child;
+        public SpecialAttackGate(VanaBoss boss, Node child) { this.boss = boss; this.child = child; }
+        public override NodeState Evaluate()
+        {
+            boss.TryFireRangedAttack();
+            boss.TryFireRadialSlam();
+            // Ultimo dei tre: se piu' condizioni sono vere nello stesso
+            // frame, la necromanzia cede il passo agli attacchi che
+            // colpiscono davvero il player. E' un evento piu' raro e ad alto
+            // impatto (necromancyCooldown alto), non deve competere per la
+            // precedenza — il lock condiviso (castingSpecialAttack) impedisce
+            // comunque le sovrapposizioni, l'ordine conta solo come
+            // spareggio.
+            boss.TryFireNecromancy();
+            return child.Evaluate();
         }
     }
 
@@ -339,6 +463,297 @@ public class VanaBoss : BehaviourTreeBase
         EndTransition();
     }
 
+    // ---------------------------------------------------------------- attacco a distanza (Cast_1)
+
+    // Chiamata ogni frame da SpecialAttackGate, PRIMA e indipendentemente dal
+    // resto dell'albero: le condizioni che prima erano implicite nella
+    // posizione nel Selector (dentro PhaseIsIdleCheck, dopo guardie non ancora
+    // dispiegate) ora vanno controllate esplicitamente qui.
+    //
+    // - phase deve essere Idle: mentre Vana e' a meta' di una transizione
+    //   scriptata (Shield/Recall/Release/Final) non deve tirare anche un
+    //   trigger dell'Animator per il lancio, altrimenti i due si accavallano.
+    // - guardiansDeployed: la bossfight non e' ancora davvero iniziata finche'
+    //   non e' scattato l'ordine di formazione (vedi OnShieldOrderFinished) —
+    //   Vana non spara prima che lo scontro sia partito sul serio.
+    //
+    // Non passa dalla macchina a fasi per la DURATA del lancio (Phase resta
+    // Idle per tutta la coroutine): il lancio non e' una transizione scriptata
+    // come Shield/Recall/Release, e farlo passare per WaitForStateEnd
+    // bloccherebbe anche recall e dispiegamento per tutta la durata della
+    // clip. castingSpecialAttack basta da solo a evitare lanci sovrapposti
+    // (con l'attacco radiale compreso, vedi TryFireRadialSlam).
+    private void TryFireRangedAttack()
+    {
+        if (castingSpecialAttack) return;
+        if (phase != Phase.Idle) return;
+        if (!guardiansDeployed) return;   // la fight non e' ancora iniziata
+        if (projectilePrefab == null) return;   // attacco non ancora configurato
+        if (Time.time < nextRangedAttackTime) return;
+
+        Vector3 flat = player.position - transform.position;
+        flat.y = 0f;
+        float dist = flat.magnitude;
+        if (dist < rangedAttackMinRange || dist > rangedAttackMaxRange) return;
+
+        nextRangedAttackTime = Time.time + rangedAttackCooldown;
+        StartCoroutine(PerformRangedAttack());
+    }
+
+    // Spawn e lancio partono da due animation event distinti sulla clip Cast_1
+    // (OnCastSpawn/OnCastRelease), non da qui: questa coroutine si limita a far
+    // partire il trigger e ad aspettare che la clip finisca prima di liberare
+    // castingSpecialAttack, cosi' Vana non puo' iniziare un secondo lancio (di
+    // nessuno dei due tipi) a meta' del primo. Se il controller non ha ancora
+    // il parametro (asset diverso o incompleto), spawna e lancia subito in
+    // sequenza, senza animazione: l'attacco resta funzionante anche prima che
+    // Cast_1 sia collegata.
+    private IEnumerator PerformRangedAttack()
+    {
+        castingSpecialAttack = true;
+
+        if (hasRangedAttackParam)
+        {
+            animator.SetTrigger(RangedAttackHash);
+            yield return WaitForStateEnd(CastStateHash, null);
+        }
+        else
+        {
+            OnCastSpawn();
+            OnCastRelease();
+        }
+
+        castingSpecialAttack = false;
+    }
+
+    // Animation event sulla clip Cast_1, al momento in cui il proiettile deve
+    // COMPARIRE (stesso schema di OnRightHandStart/OnLeftHandStart in
+    // CLAUDE.md: il metodo sta sullo stesso GameObject dell'Animator). Istanziato
+    // come figlio del punto di lancio: resta fermo e segue la mano finche' non
+    // arriva OnCastRelease, cosi' si vede comparire prima di partire davvero.
+    // Il fotogramma esatto e' una stima iniziale, da verificare a occhio e
+    // aggiustare in ModelImporter (tempo normalizzato, non in secondi).
+    public void OnCastSpawn()
+    {
+        if (pendingNecromancyTarget != null)
+        {
+            if (necromancyBoltPrefab == null) return;
+
+            Transform necroParent = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
+            Vector3 necroOrigin = necroParent.position;
+
+            Vector3 toCorpse = pendingNecromancyTarget.transform.position - necroOrigin;
+            toCorpse.y = 0f;
+            Quaternion necroRot = toCorpse.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(toCorpse.normalized)
+                : necroParent.rotation;
+
+            var corpseTarget = pendingNecromancyTarget;   // copia per la closure
+            pendingNecromancyBolt = Instantiate(necromancyBoltPrefab, necroOrigin, necroRot, necroParent);
+            pendingNecromancyBolt.Prepare(corpseTarget.transform, () => ResurrectGuardian(corpseTarget));
+            return;
+        }
+
+        if (projectilePrefab == null || player == null) return;
+
+        Transform parent = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
+        Vector3 origin = parent.position;
+
+        Vector3 toPlayer = player.position - origin;
+        toPlayer.y = 0f;
+        Quaternion rot = toPlayer.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(toPlayer.normalized)
+            : parent.rotation;
+
+        pendingProjectile = Instantiate(projectilePrefab, origin, rot, parent);
+        pendingProjectile.Prepare(player, health);
+    }
+
+    // Animation event sulla clip Cast_1, al momento in cui il proiettile PARTE
+    // davvero. Se OnCastSpawn non e' mai scattato (es. tempi degli eventi da
+    // rivedere) non c'e' niente da lanciare: nessun crash, il colpo semplicemente
+    // non parte, ed e' un segnale chiaro che i due eventi vanno riallineati.
+    public void OnCastRelease()
+    {
+        if (pendingNecromancyBolt != null)
+        {
+            pendingNecromancyBolt.Launch();
+            pendingNecromancyBolt = null;
+            return;
+        }
+
+        if (pendingProjectile == null) return;
+        pendingProjectile.Launch();
+        pendingProjectile = null;
+    }
+
+    // ---------------------------------------------------------------- attacco radiale (Cast_2)
+
+    // Stesso schema di TryFireRangedAttack, stesso lock condiviso
+    // (castingSpecialAttack): un solo controllo di distanza, nessun minimo —
+    // a differenza del proiettile, non ha senso escludere il corpo a corpo per
+    // questo attacco, anzi e' li' che colpisce meglio.
+    private void TryFireRadialSlam()
+    {
+        if (castingSpecialAttack) return;
+        if (phase != Phase.Idle) return;
+        if (!guardiansDeployed) return;   // la fight non e' ancora iniziata
+        if (slamOrbPrefab == null || radialSlamPrefab == null) return;   // attacco non ancora configurato
+        if (Time.time < nextSlamTime) return;
+
+        Vector3 flat = player.position - transform.position;
+        flat.y = 0f;
+        if (flat.magnitude > radialSlamMaxRange) return;
+
+        nextSlamTime = Time.time + radialSlamCooldown;
+        StartCoroutine(PerformRadialSlam());
+    }
+
+    // Stesso schema di PerformRangedAttack: gli animation event OnSlamSpawn/
+    // OnSlamImpact sulla clip Cast_2 fanno il lavoro vero, questa coroutine
+    // aspetta solo che la clip finisca prima di liberare castingSpecialAttack.
+    private IEnumerator PerformRadialSlam()
+    {
+        castingSpecialAttack = true;
+
+        if (hasRadialSlamParam)
+        {
+            animator.SetTrigger(RadialSlamHash);
+            yield return WaitForStateEnd(Cast2StateHash, null);
+        }
+        else
+        {
+            OnSlamSpawn();
+            OnSlamImpact();
+        }
+
+        castingSpecialAttack = false;
+    }
+
+    // Animation event sulla clip Cast_2, al momento in cui la sfera compare in
+    // mano. A differenza del proiettile resta SEMPRE figlia della mano (mai
+    // staccata): Vana la porta con se' fino a sbatterla a terra, non la lancia.
+    public void OnSlamSpawn()
+    {
+        if (slamOrbPrefab == null) return;
+
+        Transform parent = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
+        pendingSlamOrb = Instantiate(slamOrbPrefab, parent.position, parent.rotation, parent);
+    }
+
+    // Animation event sulla clip Cast_2, al momento dell'impatto a terra. Il
+    // raycast verso il basso agganciano il punto d'origine dell'onda d'urto al
+    // vero pavimento (stesso principio di NavMesh.SamplePosition usato altrove
+    // in questo file): in quel fotogramma la mano potrebbe non essere
+    // perfettamente a livello del suolo, e l'onda deve comunque nascere a terra.
+    public void OnSlamImpact()
+    {
+        if (pendingSlamOrb == null || radialSlamPrefab == null) return;
+
+        Vector3 origin = pendingSlamOrb.transform.position;
+        if (Physics.Raycast(origin + Vector3.up * 0.5f, Vector3.down, out var hit, 5f))
+            origin = hit.point;
+
+        Destroy(pendingSlamOrb);
+        pendingSlamOrb = null;
+
+        RadialSlam slam = Instantiate(radialSlamPrefab, origin, Quaternion.identity);
+        slam.Detonate(health);
+    }
+
+    // ---------------------------------------------------------------- necromanzia (fase 2)
+
+    private void OnGuardianDeath(GuardianBT guardian)
+    {
+        if (guardian != null && !deadGuardianCorpses.Contains(guardian))
+            deadGuardianCorpses.Add(guardian);
+    }
+
+    // Stesso schema di TryFireRangedAttack/TryFireRadialSlam (lock condiviso,
+    // chiamata ogni frame da SpecialAttackGate), con un vincolo in piu':
+    // GuardianFormation.ReleaseStarted deve essere vero (solo fase 2, vincolo
+    // di design fisso, non tecnico).
+    //
+    // Deterministico, non probabilistico: appena una guardia muore (in fase 2)
+    // viene rievocata, non e' piu' "puo' capitare o no". Nessun cooldown
+    // separato — il ritmo lo detta solo quanto dura la clip Cast_1 (tramite
+    // castingSpecialAttack, che impedisce due cast sovrapposti): se muoiono piu'
+    // guardie vicine, Vana le rievoca una via l'altra appena libera, nell'ordine
+    // in cui sono morte (FIFO), non a caso.
+    private void TryFireNecromancy()
+    {
+        if (castingSpecialAttack) return;
+        if (phase != Phase.Idle) return;
+        if (!guardiansDeployed) return;
+        if (!GuardianFormation.ReleaseStarted) return;
+        if (demonValePrefab == null || necromancyBoltPrefab == null) return;
+
+        activeDemons.RemoveAll(d => d == null);
+        if (activeDemons.Count >= maxConcurrentDemons) return;
+
+        deadGuardianCorpses.RemoveAll(c => c == null);
+        if (deadGuardianCorpses.Count == 0) return;
+
+        var corpse = deadGuardianCorpses[0];
+
+        // Tolto SUBITO dal pool, non all'arrivo del dardo: castingSpecialAttack
+        // si libera gia' a fine clip Cast_1, ma il dardo puo' restare in volo
+        // oltre — senza questa riga lo stesso cadavere potrebbe essere
+        // selezionato due volte.
+        deadGuardianCorpses.RemoveAt(0);
+
+        StartCoroutine(PerformNecromancy(corpse));
+    }
+
+    // Stesso schema esatto di PerformRangedAttack: riusa il trigger
+    // 'Ranged_attack' e lo stato Cast_1 — stessa animazione, stessi
+    // animation event OnCastSpawn/OnCastRelease. E' pendingNecromancyTarget
+    // (letto da OnCastSpawn) a decidere se quel Cast_1 spawna un Projectile
+    // normale o un NecromancyBolt: nessun nuovo parametro Animator, nessuna
+    // nuova clip.
+    private IEnumerator PerformNecromancy(GuardianBT corpse)
+    {
+        castingSpecialAttack = true;
+        pendingNecromancyTarget = corpse;
+
+        if (hasRangedAttackParam)
+        {
+            animator.SetTrigger(RangedAttackHash);
+            yield return WaitForStateEnd(CastStateHash, null);
+        }
+        else
+        {
+            OnCastSpawn();
+            OnCastRelease();
+        }
+
+        pendingNecromancyTarget = null;
+        castingSpecialAttack = false;
+    }
+
+    // Chiamato dal dardo all'arrivo (NecromancyBolt callback onArrival):
+    // distrugge il cadavere e istanzia il DemonVale al suo posto, gia'
+    // allertato (nessun MinionEntrance: nasce esattamente dov'era il
+    // cadavere).
+    private void ResurrectGuardian(GuardianBT corpse)
+    {
+        if (corpse == null || demonValePrefab == null) return;
+
+        Vector3 pos = corpse.transform.position;
+        Quaternion rot = corpse.transform.rotation;
+
+        Destroy(corpse.gameObject);
+
+        var demon = Instantiate(demonValePrefab, pos, rot);
+        demon.SetHome(pos, rot);
+        demon.MarkAlerted();
+        demon.SuppressCoordinatorOverride();
+
+        activeDemons.Add(demon);
+        var h = demon.GetComponent<Health>();
+        if (h != null) h.OnDeath += () => activeDemons.Remove(demon);
+    }
+
     // ---------------------------------------------------------------- fine bossfight
 
     private void EnterFinalSequence()
@@ -401,6 +816,13 @@ public class VanaBoss : BehaviourTreeBase
     {
         Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.9f);
         DrawGizmoCircle(transform.position, shieldTriggerDistance);
+
+        Gizmos.color = new Color(0.6f, 0.1f, 0.85f, 0.6f);
+        DrawGizmoCircle(transform.position, rangedAttackMinRange);
+        DrawGizmoCircle(transform.position, rangedAttackMaxRange);
+
+        Gizmos.color = new Color(0.95f, 0.28f, 0.05f, 0.6f);
+        DrawGizmoCircle(transform.position, radialSlamMaxRange);
     }
 
     private static void DrawGizmoCircle(Vector3 center, float radius)

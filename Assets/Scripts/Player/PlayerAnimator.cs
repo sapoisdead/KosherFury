@@ -122,8 +122,17 @@ public class PlayerAnimator : MonoBehaviour
         Animator.StringToHash("Dash_Back"),
     };
 
+    // Vero da quando il colpo e' deciso a quando l'animazione e' finita, fusione
+    // iniziale compresa. CombatState da solo non basta: fra il trigger e
+    // l'ingresso nello stato l'Animator e' ancora nello stato precedente, quindi
+    // IsAttacking resta falso per tutta la transizione (~0.1s) e in quella
+    // finestra il player scivolerebbe ancora.
+    public bool IsCommittedToAttack =>
+        (combatState != null && combatState.IsAttacking) || comboAdvancePending || slashComboAdvancePending;
+
     private int slashComboStep;
     private float lastSlashTime;
+    private float bufferedSlashTime = -1f;
     private bool slashQueued;
     private bool slashComboAdvancePending;
     private int pendingSlashStateHash;
@@ -244,8 +253,13 @@ public class PlayerAnimator : MonoBehaviour
         // lo scatto ha fotogrammi di invulnerabilita': e' una schivata, se non
         // evitasse niente non sarebbe una scelta
         bool inDashState = IsInAnyState(currentState.shortNameHash, DashStates);
+        bool inAreaSlashState = currentState.shortNameHash == AreaSlashStateHash;
         // Fase dell'attacco in corso, letta dagli animation event delle hitbox.
-        combatState.UpdatePhase(inPunchState || inSlashState, currentState.shortNameHash);
+        // Area_Slash e' incluso: ha i propri OnWeaponStart/OnWeaponEnd come gli
+        // altri colpi, quindi ne segue le tre fasi. Restandone fuori era l'unico
+        // attacco senza armor sui frame attivi e senza recovery punibile — cioe'
+        // l'unico che i nemici non potevano leggere.
+        combatState.UpdatePhase(inPunchState || inSlashState || inAreaSlashState, currentState.shortNameHash);
 
         // Rete di sicurezza per la parata: la chiude di norma OnParryEnd (animation
         // event su Hand_parry/Sword_parry), ma se l'animazione viene interrotta
@@ -254,7 +268,7 @@ public class PlayerAnimator : MonoBehaviour
         // resterebbe 'in parata' a oltranza.
         if (parryActive)
         {
-            bool canceledIntoAction = inPunchState || inSlashState || inHitState || inDashState;
+            bool canceledIntoAction = inPunchState || inSlashState || inAreaSlashState || inHitState || inDashState;
             bool timedOut = Time.time - parryCommandTime >= parryMaxWindow;
             if (canceledIntoAction || timedOut) EndParry();
         }
@@ -273,6 +287,8 @@ public class PlayerAnimator : MonoBehaviour
 
         if (slashComboAdvancePending && currentState.shortNameHash == pendingSlashStateHash)
             slashComboAdvancePending = false;
+
+        ConsumeSlashBuffer();
 
         if (slashQueued && !slashComboAdvancePending && !animator.IsInTransition(0))
         {
@@ -428,7 +444,14 @@ public class PlayerAnimator : MonoBehaviour
             bufferedPunchTime = -1f;
             FirePunch();
         }
-        else if (!comboAdvancePending)
+        // La concatenazione si accetta SOLO in recovery, cioe' a colpo gia' speso.
+        // Prima bastava premere in un momento qualsiasi del colpo in corso e il
+        // successivo era ormai deciso: bastava pigiare per incatenare l'intera
+        // combo senza piu' poter cambiare idea. Il comando dato troppo presto non
+        // viene scartato qui, resta nel buffer: se la finestra si apre entro
+        // inputBufferTime parte lo stesso, altrimenti scade da solo. Cosi' un
+        // anticipo di un istante perdona, ma lo spam non impegna piu' a niente.
+        else if (!comboAdvancePending && combatState.IsPunishable)
         {
             bufferedPunchTime = -1f;
             punchQueued = true;
@@ -439,19 +462,41 @@ public class PlayerAnimator : MonoBehaviour
 
     private void TriggerSlash()
     {
+        bufferedSlashTime = Time.time;
+        ConsumeSlashBuffer();
+    }
+
+    // Gemella di ConsumePunchBuffer: stessa struttura, stessa finestra di
+    // concatenazione in recovery. La spada aveva una coda senza scadenza, quindi
+    // un click dato durante il caricamento restava impegnato fino in fondo.
+    private void ConsumeSlashBuffer()
+    {
+        if (bufferedSlashTime < 0f) return;
+
+        if (Time.time - bufferedSlashTime > inputBufferTime)
+        {
+            bufferedSlashTime = -1f;
+            return;
+        }
+
         var state = animator.GetCurrentAnimatorStateInfo(0);
         if (state.shortNameHash == TakeHitStateHash) return;
 
         bool inSlash = IsInAnyState(state.shortNameHash, SlashStates);
 
-        // stessa logica della combo corpo a corpo
         if (!inSlash && Time.time - lastSlashTime > comboResetTime)
             slashComboStep = 0;
+
         if (!inSlash)
+        {
+            bufferedSlashTime = -1f;
             FireSlash();
-        else if (!slashComboAdvancePending)
+        }
+        else if (!slashComboAdvancePending && combatState.IsPunishable)
+        {
+            bufferedSlashTime = -1f;
             slashQueued = true;
-        // stessa logica della combo pugni: se c'e' gia' un colpo in coda non confermato, il click viene scartato
+        }
     }
 
     private static bool IsInAnyState(int hash, int[] states)
@@ -519,16 +564,19 @@ public class PlayerAnimator : MonoBehaviour
 
     // La finestra di colpo e la fase Active sono la stessa cosa vista da due lati:
     // vengono aperte e chiuse insieme, cosi' non possono divergere.
+    // Confronto esplicito con null e non '?.': l'operatore di C# ignora il controllo
+    // "oggetto distrutto" di Unity, quindi una hitbox gia' distrutta (arma cambiata
+    // a colpo in volo) passava il filtro e lanciava MissingReferenceException.
     private void OpenWindow(Hitbox hitbox, float damage)
     {
         combatState.OpenActiveWindow();
-        hitbox?.Activate(damage);
+        if (hitbox != null) hitbox.Activate(damage);
     }
 
     private void CloseWindow(Hitbox hitbox)
     {
         combatState.CloseActiveWindow();
-        hitbox?.Deactivate();
+        if (hitbox != null) hitbox.Deactivate();
     }
 
     private void FirePunch()

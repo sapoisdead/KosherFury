@@ -41,10 +41,20 @@ public class Hitbox : MonoBehaviour
     [Tooltip("Durata REALE (non scalata) del rallentamento su esecuzione.")]
     [SerializeField] private float executionSlowMoDuration = 0.2f;
 
-    [Tooltip("Spinta impressa al bersaglio, in m/s. 0 per non spingere.")]
+    [Tooltip("Spinta impressa al bersaglio, in m/s. 0 per non spingere. La distanza percorsa e' forza^2/(2*decay), con decay 9 sul componente Knockback: a 1.5 fa 12.5 cm. Tenerla bassa, o il bersaglio esce di portata e le combo non si concatenano.")]
     [SerializeField] private float knockback = 3.5f;
     [Tooltip("Spinta impressa a CHI ATTACCA quando il colpo viene parato: e' la parata che lo respinge.")]
     [SerializeField] private float knockbackOnParry = 4.5f;
+
+    // La reazione del rig e' SEPARATA dalla spinta: erano lo stesso numero, quindi
+    // abbassare il knockback per far concatenare le combo smorzava anche l'impatto
+    // visivo, e il colpo diventava molle. Cosi' si puo' spingere poco e scomporre
+    // molto, che e' il modo in cui un colpo si sente forte senza spostare il
+    // bersaglio fuori portata.
+    [Tooltip("Forza passata a HitImpactReaction, cioe' quanto il colpo SCOMPONE il rig del bersaglio. Indipendente dalla spinta: e' l'impatto che si vede, non quello che sposta. I gradi effettivi li decide il bersaglio (degreesPerForce e maxDegrees sul suo HitImpactReaction).")]
+    [SerializeField] private float impactReaction = 2.5f;
+    [Tooltip("Come impactReaction, ma per il colpo parato: e' chi ha attaccato a incassare la scomposizione.")]
+    [SerializeField] private float impactReactionOnParry = 4f;
 
     [Header("Debug")]
     [Tooltip("Solo per il disegno del gizmo: non influisce sui controlli.")]
@@ -249,9 +259,22 @@ public class Hitbox : MonoBehaviour
         // esecuzione (stordito SPECIFICAMENTE da una parata, non da una reazione
         // da colpo normale), questo colpo lo uccide sul colpo (vedi Health.TakeDamage).
         bool isExecution = health.IsVulnerableToExecution && !health.IsBlocking;
+        // TakeDamage ritorna false sia quando il danno passa sia quando viene
+        // ignorato (morto, invincibile): per la catena serve sapere se il colpo
+        // ha davvero toccato qualcuno, e questo si puo' solo guardare PRIMA.
+        bool victimWasHittable = !health.IsDead && !health.IsInvincible;
+
         bool wasParried = health.TakeDamage(damage);
         if (wasParried)
             OwnerHealth?.Stagger(fromParry: true);
+
+        // La catena avanza sia colpendo sia parando: la parata e' una lettura, non
+        // una pausa, quindi difendersi bene non deve azzerare quello che si e'
+        // costruito attaccando.
+        if (IsPlayer(OwnerRoot) && victimWasHittable && !wasParried)
+            ComboCounter.Register();
+        else if (wasParried && IsPlayer(health.transform))
+            ComboCounter.Register();
 
         float appliedHitStop = wasParried ? hitStopOnParry : (isExecution ? hitStopOnExecution : hitStop);
         HitStop.Freeze(OwnerRoot.gameObject, health.gameObject, appliedHitStop);
@@ -262,6 +285,7 @@ public class Hitbox : MonoBehaviour
         {
             float appliedShake = wasParried ? cameraShakeOnParry : (isExecution ? cameraShakeOnExecution : cameraShake);
             CameraShake.Add(appliedShake);
+            GamepadRumble.Add(appliedShake, appliedShake * 0.5f);
 
             if (isExecution)
                 ExecutionSlowMo.Trigger(executionSlowMoScale, executionSlowMoDuration);
@@ -291,10 +315,19 @@ public class Hitbox : MonoBehaviour
 
         if (force <= 0f || pushed == null || origin == null) return;
 
-        var kb = pushed.GetComponentInChildren<Knockback>();
-        if (kb == null) return;
+        Vector3 direction = pushed.position - origin.position;
 
-        kb.Apply(pushed.position - origin.position, force);
+        // entrambi opzionali: se il personaggio non ha uno dei due componenti,
+        // semplicemente quella parte della reazione non succede
+        pushed.GetComponentInChildren<Knockback>()?.Apply(direction, force);
+        pushed.GetComponentInChildren<HitImpactReaction>()?.Kick(
+            direction, wasParried ? impactReactionOnParry : impactReaction);
+    }
+
+    private static bool IsPlayer(Transform t)
+    {
+        if (t == null || PlayerManager.Instance == null) return false;
+        return PlayerManager.Instance.PlayerTransform == t;
     }
 
     private bool InvolvesPlayer(Health victim)

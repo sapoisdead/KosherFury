@@ -77,7 +77,9 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
+  impactReaction: 2.5
+  impactReactionOnParry: 4
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &592201312368192602
 GameObject:
@@ -156,7 +158,9 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
+  impactReaction: 2.5
+  impactReactionOnParry: 4
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &5240990425417328714
 GameObject:
@@ -235,7 +239,9 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
+  impactReaction: 2.5
+  impactReactionOnParry: 4
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &5305719805405890125
 GameObject:
@@ -575,7 +581,9 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
+  impactReaction: 2.5
+  impactReactionOnParry: 4
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1001 &8003798782246217102
 PrefabInstance:
@@ -587,15 +595,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -726,7 +734,20 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3986966352640310681}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7971190783474769770}
   m_SourcePrefab: {fileID: 100100000, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+--- !u!4 &268821688969090890 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7829577706673091268, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+  m_PrefabInstance: {fileID: 8003798782246217102}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &800470077293092933 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7208261743932278219, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+  m_PrefabInstance: {fileID: 8003798782246217102}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1609529147061328790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -484974042906411496, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
@@ -789,6 +810,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxHealth: 1500
   hitStunDuration: 2.5
+  despawnOnDeath: 0
 --- !u!114 &989940904612404151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -806,6 +828,12 @@ MonoBehaviour:
   leftHandHitbox: {fileID: 0}
   rightFootHitbox: {fileID: 0}
   leftFootHitbox: {fileID: 0}
+  attackDamageMultiplier:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
 --- !u!195 &1518404672002169821
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -818,7 +846,7 @@ NavMeshAgent:
   m_Radius: 0.5
   m_Speed: 4.2
   m_Acceleration: 8
-  avoidancePriority: 50
+  avoidancePriority: 20
   m_AngularSpeed: 720
   m_StoppingDistance: 1.5
   m_AutoTraverseOffMeshLink: 1
@@ -870,12 +898,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuardianBT
   attackRangeWhileGuarding: 1.25
   arriveDistance: 0.15
+  returnDistance: 0.4
   turnSpeed: 480
   moveSpeedWhileGuarding: 24
-  guardDamageMultiplier: 6
+  guardDamageMultiplier: 1.5
   guardKnockbackMultiplier: 0
-  releasedDamageMultiplier: 3
-  releasedMoveSpeed: 8
+  releasedDamageMultiplier: 2.4
+  releasedMoveSpeed: 5.5
   attackRange: 1.05
   strikeDistance: 1
   spacingDistance: 2
@@ -890,8 +919,28 @@ MonoBehaviour:
   reactionDelayMax: 0.12
   playerReach: 1.15
   punishCooldown: 0.6
-  formationStandoff: 2
+  formationStandoff: 3.5
   formationArc: 140
+--- !u!114 &7971190783474769770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7192914117633530079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e71bb31f6f2df4c08ae68eb82ab9466f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitImpactReaction
+  bones:
+  - bone: {fileID: 268821688969090890}
+    weight: 1
+  - bone: {fileID: 800470077293092933}
+    weight: 0.5
+  degreesPerForce: 20
+  maxDegrees: 60
+  recoveryTime: 0.5
 --- !u!4 &7537211493377376869 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}

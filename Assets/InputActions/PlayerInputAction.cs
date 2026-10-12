@@ -556,7 +556,7 @@ public partial class @PlayerInputAction: IInputActionCollection2, IDisposable
             ""bindingGroup"": ""Pad"",
             ""devices"": [
                 {
-                    ""devicePath"": ""<DualShockGamepad>"",
+                    ""devicePath"": ""<Gamepad>"",
                     ""isOptional"": false,
                     ""isOR"": false
                 }

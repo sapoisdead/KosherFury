@@ -10,6 +10,12 @@
       },
       "hash": "7d4ecbd3bf148efbb6c9c07b28fdedd5c44855e8"
     },
+    "com.mf.shared": {
+      "version": "file:../../_Shared",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

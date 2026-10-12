@@ -7,6 +7,10 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 4.8f;
     [SerializeField] private float sprintSpeed = 9.6f;
+    [Tooltip("Velocita' con cui il player si porta avanti DURANTE il proprio colpo, solo se agganciato. Serve a recuperare la spinta che il colpo precedente ha impresso al bersaglio: senza, dopo due o tre colpi il nemico e' fuori portata e la combo si spezza. Non e' movimento libero, punta solo al bersaglio e si ferma a attackAdvanceMinDistance.")]
+    [SerializeField] private float attackAdvanceSpeed = 1.2f;
+    [Tooltip("Distanza a cui l'avanzamento durante il colpo si ferma. Sotto la portata del player (1.05-1.10 m) e sopra il minimo fisico fra i due corpi (0.80 m).")]
+    [SerializeField] private float attackAdvanceMinDistance = 0.9f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -20f;
     [SerializeField] private float jumpBufferTime = 0.15f;
@@ -309,6 +313,18 @@ public class PlayerMovement : MonoBehaviour
 
         bool locked = TargetLockSystem.Instance != null && TargetLockSystem.Instance.IsLocked;
 
+        // Il proprio colpo e' un impegno: finche' dura non ci si sposta. Restano
+        // la gravita' e, da agganciati, la rotazione verso il bersaglio — senza
+        // quella un nemico che si sposta di poco farebbe mancare un colpo gia'
+        // partito. Lo scatto invece passa sopra a questo blocco (sta piu' in
+        // alto): annullare l'attacco con una schivata resta possibile.
+        if (animator != null && animator.IsCommittedToAttack)
+        {
+            if (locked) FaceLockTarget();
+            controller.Move((AttackAdvance(locked) + velocity) * Time.deltaTime);
+            return;
+        }
+
         if (locked)
         {
             HandleLockedMovement();
@@ -342,6 +358,33 @@ public class PlayerMovement : MonoBehaviour
         {
             controller.Move(velocity * Time.deltaTime);
         }
+    }
+
+    // Avanzamento durante il proprio colpo. Ogni colpo andato a segno spinge via
+    // il bersaglio, e da quando il movimento e' bloccato in attacco il player non
+    // ha piu' modo di recuperare quei centimetri: dopo due o tre colpi il nemico e'
+    // fuori portata e la combo muore da sola. E' lo stesso accorgimento che usa il
+    // simp, che avanza mentre concatena (vedi AttackPlayer.Striking).
+    //
+    // Non riapre il movimento libero: punta solo al bersaglio agganciato, si ferma
+    // a distanza di colpo e non supera mai quella soglia in un frame.
+    private Vector3 AttackAdvance(bool locked)
+    {
+        if (!locked || attackAdvanceSpeed <= 0f) return Vector3.zero;
+
+        Transform target = TargetLockSystem.Instance.LockedTarget;
+        if (target == null) return Vector3.zero;
+
+        Vector3 toTarget = target.position - transform.position;
+        toTarget.y = 0f;
+
+        float gap = toTarget.magnitude - attackAdvanceMinDistance;
+        if (gap <= 0f) return Vector3.zero;
+
+        // il passo non deve mai scavalcare la soglia: senza il clamp, a frame
+        // lunghi il player finirebbe addosso al nemico invece che a tiro
+        float speed = Mathf.Min(attackAdvanceSpeed, gap / Mathf.Max(Time.deltaTime, 0.0001f));
+        return toTarget.normalized * speed;
     }
 
     private void FaceLockTarget()
