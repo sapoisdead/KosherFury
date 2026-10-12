@@ -674,16 +674,6 @@ MonoBehaviour:
   stanceBlendSpeed: 6
   walkClipSpeed: 4.8
   minLocomotionPlaybackRate: 0.35
-  moves:
-  - {fileID: 11400000, guid: de498035875284107b2cf1b9564883d5, type: 2}
-  - {fileID: 11400000, guid: de9f661659137472fb0a7b1d3d22f2a7, type: 2}
-  - {fileID: 11400000, guid: d9b15d82c68744228966c269a6468a88, type: 2}
-  - {fileID: 11400000, guid: e1e8fbef354524a81b3772c492afb8ab, type: 2}
-  - {fileID: 11400000, guid: d4cbc6daad9af49db814a562ee042875, type: 2}
-  - {fileID: 11400000, guid: b91724565a8c14f7c93f1db821991130, type: 2}
-  - {fileID: 11400000, guid: fe85fc5e669464a5aa1e3abdfb812cfa, type: 2}
-  - {fileID: 11400000, guid: c84e0ef29e09d46b1bd2415f395ca48d, type: 2}
-  - {fileID: 11400000, guid: 922473e67433f4d04affeacd02846922, type: 2}
   punchComboMultiplier:
   - 2
   - 2.5
