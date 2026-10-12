@@ -11,7 +11,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
-| `Sword_Guard_Idle` | Rabbi | esportata | utente: giudizio in gioco (anteprima col lock); poi integrazione col sistema nuovo |
+| `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
 | `Sword_Light_1` | Rabbi | spec | animazione |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
@@ -55,6 +55,8 @@ non esiste, l'anteprima in gioco è un override in memoria valido solo in Play M
     (guardia di tre quarti). Se non è voluto, la mossa va girata in Blender.
 - Unity applica la compressione *Keyframe Reduction* di default (curve ridotte al 4.7%).
   Per un idle va bene; per i colpi proporrò di spegnerla (vedi `HANDOFF.md`).
+- 12:43: **animazione approvata dall'utente** in gioco (anteprima col lock, spada in
+  mano). Bacino a 30° e piedi −1.5 cm restano così.
 
 ---
 

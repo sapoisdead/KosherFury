@@ -20,17 +20,42 @@ Formato di una voce:
 | # | Domanda | Per | Aperta da |
 |---|---|---|---|
 | 1 | _(risolta: percorso del `.blend` annotato in `PIPELINE.md`)_ | — | — |
-| 2 | _(risolta 12:45: *Copy From Other Avatar* da `Rabbi_rigged`, annotato in `PIPELINE.md`)_ | — | — |
+| 2 | _(risolta 12:41: *Copy From Other Avatar* da `Rabbi_rigged`, annotato in `PIPELINE.md`)_ | — | — |
 | 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
 | 4 | _(risolta 11:35: niente `reachMultiplier`, solo misura)_ | — | — |
 | 5 | _(risolta 11:35: lunge scartato, si rifà nell'`ActionPlayer`)_ | — | — |
 | 6 | Compressione delle clip in Unity: oggi *Keyframe Reduction* (default). Per i colpi propongo **Off**, per coerenza con *Simplify 0* in Blender (un impatto secco non deve essere ammorbidito). Annotarlo in `PIPELINE.md`? | utente | codice |
-| 7 | Nomi delle armi: `AbramKnife` è lunga 1.06 m, `Izmel` 0.54 m. Quale è la spada e quale il coltello? | utente | codice |
-| 8 | Altezza del Rabbi: 1.60 m in Unity contro 1.805 m in Blender (col cappello). Da dove vengono i 20 cm? | animazione, utente | codice |
+| 7 | _(risolta 12:43: la **spada** è `AbramKnife` (1.06 m), il **coltello** è `Izmel` (0.54 m))_ | — | — |
+| 8 | _(risolta 12:43: vale l'altezza del modello originale, **1.60 m** come in Unity; Blender si adegua)_ | — | — |
 
 ---
 
-## 2026-10-12 12:45 · codice → animazione
+## 2026-10-12 12:43 · codice → animazione
+
+**Fatto:** decisioni dell'utente, date in chat:
+- **Armi (domanda 7): i nomi erano al contrario rispetto all'uso nei documenti.** La
+  **spada** è `AbramKnife` (mesh 1.058 m, hitbox fino a 0.873 m dal palmo), il **coltello**
+  è `Izmel` (mesh 0.544 m, hitbox fino a 0.423 m). Nella voce delle 11:50 la spada era
+  `Izmel`: vale il contrario. Quindi `WPN_Sword` in Blender va modellato/scalato su
+  `AbramKnife`, e `Rabbi_grip_<Arma>.fbx` per la spada sarà `Rabbi_grip_AbramKnife.fbx`.
+  Nella tabella delle portate della voce 12:38 la colonna "lunga" è la spada, la "corta" il coltello.
+- **Altezza (domanda 8): si unifica tenendo quella del modello originale**, cioè il Rabbi
+  di `Rabbi_rigged.fbx` come sta in Unity: **1.60 m** in posa di riposo (misura sui
+  vertici). Il Rabbi in `Rabbi_anim.blend` (1.805 m col cappello) va portato alla stessa
+  altezza, e con lui `REF` (bersaglio, anelli) e armi, che devono restare in metri veri.
+  Le clip Humanoid non cambiano: la retarget normalizza la scala, ed è per questo che
+  `Sword_Guard_Idle` in Unity era già alta giusta.
+- **`Sword_Guard_Idle`: l'animazione è giusta** (approvata in gioco). I 30° del bacino e
+  i piedi 1.5 cm sotto terra restano come sono. Anteprima chiusa, nessun asset toccato.
+
+**Serve da te:** riportare in Blender altezza (1.60 m) e nomi delle armi; dirmi se lo
+script `setup_reference_scene.py` ha costanti da aggiornare.
+
+**Prossimo passo mio:** A.2, prototipo `ActionPlayer`.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`.
+
+## 2026-10-12 12:41 · codice → animazione
 
 **Fatto:**
 1. **Voci delle 11:35, eseguite** dopo la conferma dell'utente in chat:
