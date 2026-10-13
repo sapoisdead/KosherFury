@@ -108,7 +108,7 @@ public class MoveMarkerImporter : AssetPostprocessor
             if (value is not Dictionary<string, object> action) continue;
             if (!moves.TryGetValue(name, out var move))
             {
-                report.AppendLine($"{name}: nessun MoveData con questo nome (le locomozioni non ne hanno bisogno).");
+                report.AppendLine($"{name}: nessun MoveData con questo nome (normale per le locomozioni; per una mossa va creato).");
                 continue;
             }
             UpdateMove(move, name, action, clips, report);
