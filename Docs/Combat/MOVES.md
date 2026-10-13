@@ -15,7 +15,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | `Sword_Light_1` | Rabbi | in prova | utente: giudizio in gioco (portata 1.59 m tenuta) |
 | `Sword_Light_2` | Rabbi | esportata | codice: in catena e prova in gioco |
 | `Sword_Light_3` | Rabbi | esportata | codice: in catena e prova in gioco |
-| `Sword_Parry` | Rabbi | spec | animazione |
+| `Sword_Parry` | Rabbi | esportata | codice: collegare come parata della spada |
 | `Dodge_F` | Rabbi | spec | animazione |
 
 **Ordine dei lavori** (13 ottobre):
@@ -229,7 +229,8 @@ Integrata il 13 ottobre alle 16:05: terzo colpo della catena della spada, che ch
 
 ## Sword_Parry
 
-**Stato:** spec
+**Stato:** esportata (13 ottobre, 16:10). Spada su in 2 frame; durante la finestra la mano scende
+sotto la guardia (da 0.92 a 0.66 m); mano sinistra non sulla lama.
 
 ### Specifica
 | Prima della finestra | Finestra (`parry_start`→`parry_end`) | Dopo | Totale |
@@ -244,7 +245,10 @@ Integrata il 13 ottobre alle 16:05: terzo colpo della catena della spada, che ch
 - Riposta dopo parata riuscita: `Sword_Riposte`, più avanti.
 
 ### Integrazione
-_vuota_
+Integrata il 13 ottobre alle 16:53 come parata della spada. Tempi dall'importer: finestra
+2–14, fine 30. Recupero a vuoto 20 frame, niente cancel; dopo una parata riuscita si attacca
+subito. Collaudo col Parry Trainer: 4 parate su 4 contro colpi veri, il simp resta stordito;
+recupero a vuoto misurato 19.5 frame.
 
 ---
 

@@ -32,6 +32,72 @@ Formato di una voce:
 
 ---
 
+## 2026-10-13 16:53 · codice → animazione
+
+**Fatto** (voci 16:20 e 16:25):
+1. **`Sword_Parry` è la parata della spada** (commit `0eecfb5`), al posto di quella
+   vecchia. Tempi dall'importer: finestra **2–14**, fine 30. Recupero a vuoto **20 frame**
+   come da `MOVES.md`. **Niente cancel** (non c'è il marker), quindi la parata impegna; dopo
+   una parata riuscita si può subito attaccare (riposta: la catena leggera, finché non
+   c'è `Sword_Riposte`).
+2. **Prova contro colpi veri** (commit `2b4ab15`): menu **`KosherFury/Combat/Parry Trainer
+   (Play Mode)`**. Ferma le ondate, spegne gli altri nemici e mette un simp davanti al
+   player, con il comportamento spento. Il simp si riporta a 0.9 m prima di ogni colpo
+   (la spinta dei colpi presi allontana il player) e attacca ogni 2 s con i suoi colpi.
+   **Ogni colpo scrive nel log** `[ParryTrainer] colpo PARATO / preso / a vuoto`.
+   Primo collaudo:
+   - con la parata comandata 0.1 s prima che il colpo del simp apra la hitbox: **4 parate
+     su 4**, il simp resta stordito ogni volta;
+   - parata a vuoto: il primo comando passa **19.5 frame** dopo la fine della mossa (20
+     attesi, risoluzione del passo di prova 0.5 frame);
+   - a 1.0 m alcuni colpi del simp **non arrivano** (calcio sinistro 0.99 m, e il calcio
+     destro che non registra mai, vedi CLAUDE.md); per questo l'allenatore sta a 0.9 m.
+3. **Torsione dell'avambraccio**: presa nota della decisione (problema noto, si riprende se
+   diventa visibile). La segnalo se una misura futura supera di molto 2.6.
+
+**Serve da te:** niente. Per giudicare la finestra in gioco: Play Mode, menu sopra,
+spada in mano (AbramKnife), parata con L1 / Q.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; commit `2b4ab15`, `0eecfb5`;
+`Tools/Blender/check_arm_twist.py` (della sessione animazione) messo nel commit docs.
+
+## 2026-10-13 16:25 · animazione → codice
+
+**Decisione dell'utente sulla torsione dell'avambraccio (voce 16:05):** ha provato i tre
+fendenti in gioco e **non vede scatti**. Non si corregge per ora: resta come problema noto,
+da riprendere solo se diventa visibile (colpi più lenti, altre clip). Il ritocco in Blender
+proposto alle 16:20 è sospeso; `check_arm_twist.py` resta in `Tools/Blender/` per allora.
+
+**Serve da te:** niente di nuovo. Se in qualche misura futura la torsione supera di molto i
+valori di oggi (2.6 su `Sword_Light_3`), segnalalo.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-13 16:20 · animazione → codice
+
+**Fatto:**
+- Letta la voce delle 16:05. Sulla **torsione dell'avambraccio** concordo: si corregge in
+  Blender. Ho aggiunto `Tools/Blender/check_arm_twist.py`, che per ogni action con Fake
+  User segnala i frame in cui braccio o avambraccio ruotano oltre 80° sul proprio asse
+  rispetto alla rest pose. L'utente lo usa per trovare i frame e ritoccarli: meno rotazione
+  sull'avambraccio, compensata da spalla e polso. La misura di Blender (rispetto alla
+  A-pose) non coincide al grado con i muscoli di Unity: dopo la correzione serve la tua
+  rimisura.
+- Esportata **`Sword_Parry`** (FBX delle 16:10): 30 frame, `parry_start` 2, `parry_end` 14.
+  Verificato reimportando: raccordi con la guardia a zero (inizio e fine), piedi fermi,
+  nessuna scala; la spada sale in 2 frame (11 m/s). Durante la finestra però la mano
+  destra **scende** da 0.92 a 0.66 m, sotto la guardia (0.72): l'ho segnalato all'utente.
+- Confermato anche il raccordo `Sword_Light_2` (26) → `Sword_Light_3` (0): 0.0 cm.
+
+**Serve da te:**
+1. Collega `Sword_Parry` al moveset della spada come parata (finestra dal JSON, recupero a
+   vuoto 20 frame come da `MOVES.md`), al posto di quella vecchia.
+2. Fammi sapere se riesci a dare all'utente un modo per provare la parata **contro un
+   colpo vero**: un simp che attacca, o un bersaglio che colpisce a intervalli.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; `Tools/Blender/check_arm_twist.py`;
+export dell'utente.
+
 ## 2026-10-13 16:05 · codice → animazione
 
 **Fatto** (voce 15:45):
