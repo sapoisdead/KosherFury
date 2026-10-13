@@ -20,11 +20,15 @@ nella voce di handoff.
   `MoveData`. Non si rinomina dopo il primo export.
   - Mosse di un'arma: `<Set>_<Mossa>[_<N>]`, con set `Fists`, `Sword` o `Knife`.
     Esempi: `Sword_Light_1`, `Sword_Heavy`, `Fists_Parry`, `Knife_Riposte`.
-  - Locomozione **libera** (nessun nemico agganciato, solo in avanti): `<Set>_Idle`,
-    `<Set>_Walk`, `<Set>_Run`.
+  - Idle libero per arma (nessun nemico agganciato): `<Set>_Idle`.
   - Locomozione **in guardia** (nemico agganciato, strafe): `<Set>_Guard_Idle`,
     `<Set>_Guard_Walk_F/B/L/R` (le quattro con la **stessa durata**).
   - Le mosse d'attacco partono e finiscono nella posa di `<Set>_Guard_Idle`.
+  - **Locomozione libera e salto in comune** a tutte le armi (decisione del 13 ottobre):
+    `Walk`, `Run`, `Jump_Start`, `Jump_Air` (ciclica), `Jump_Land`. Le braccia di ogni arma
+    sopra la locomozione libera: `<Set>_Arms_Walk`, `<Set>_Arms_Run`, cicli della **stessa
+    durata** della clip di gambe (o pose ferme di un frame).
+  - **Per arma** resta la guardia col lock: `<Set>_Guard_Idle`, `<Set>_Guard_Walk_F/B/L/R`.
   - Mosse comuni a tutte le armi: senza prefisso. Esempi: `Dodge_F`, `Hit_Light_F`,
     `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`, `Weapon_Switch`.
   - Niente spazi, niente suffissi `.001`.
@@ -65,6 +69,7 @@ In secondi: `(frame − frame_start) / fps`.
 | `cancel` | da qui schivata e parata annullano la mossa | facoltativo: senza, la mossa non è annullabile |
 | `parry_start`, `parry_end` | finestra di parata | parate |
 | `iframe_start`, `iframe_end` | invulnerabilità | schivate |
+| `liftoff` | stacco: da qui il codice dà la spinta verso l'alto | `Jump_Start` (obbligatorio) |
 
 Cosa **non** sta nei marker (sta nel `MoveData` in Unity, e la proposta iniziale sta in
 `MOVES.md`): quali hitbox si aprono, danno, impatto, lunge, collegamenti fra mosse.

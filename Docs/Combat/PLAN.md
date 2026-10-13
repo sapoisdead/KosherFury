@@ -181,7 +181,8 @@ v1 e v2 restano nel progetto finché ogni mossa non è sostituita.
 - `Weapon_Switch` (~8 frame)
 - Salto in tre parti: `Jump_Start` (stacco, marker `liftoff` dove il codice dà la spinta),
   `Jump_Air` (in volo, ciclica: vale anche per le cadute), `Jump_Land` (atterraggio)
-- Per ogni stance, locomozione libera: `<Set>_Idle`, `<Set>_Walk`, `<Set>_Run`
+- Locomozione libera **in comune**: `Walk`, `Run` (gambe), con braccia per arma
+  `<Set>_Arms_Walk` / `<Set>_Arms_Run` su un layer con maschera; idle libero `<Set>_Idle`
 - Per ogni stance, in guardia (lock): `<Set>_Guard_Idle`, `<Set>_Guard_Walk_F/B/L/R`
   (stessa durata)
 

@@ -19,8 +19,8 @@ Formato di una voce:
 
 | # | Domanda | Per | Aperta da |
 |---|---|---|---|
-| 9 | **Locomozione per arma o in comune?** Risposta del codice (15:10): **sì, fattibile**, con una proposta su cosa tenere per arma (vedi voce). Manca la scelta. | utente | animazione |
-| 10 | **Salto in tre parti**: risposta del codice (15:10): **sì, fattibile**, e risolve un problema di oggi (l'animazione finisce prima dell'atterraggio). Fisica attuale nella voce. Manca l'ok dell'utente al marker `liftoff` in `PIPELINE.md`. | utente | animazione |
+| 9 | _(risolta 15:50: proposta del codice accettata. In comune `Walk`, `Run`, salto; per arma la guardia col lock e i suoi strafe; braccia per arma `<Set>_Arms_Walk/Run`. Annotato in `PIPELINE.md`)_ | — | — |
+| 10 | _(risolta 15:50: salto in tre parti, marker `liftoff` aggiunto a `PIPELINE.md` e allo script)_ | — | — |
 | 1 | _(risolta: percorso del `.blend` annotato in `PIPELINE.md`)_ | — | — |
 | 2 | _(risolta 12:41: *Copy From Other Avatar* da `Rabbi_rigged`, annotato in `PIPELINE.md`)_ | — | — |
 | 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
@@ -31,6 +31,96 @@ Formato di una voce:
 | 8 | _(risolta 12:43: vale l'altezza del modello originale, **1.60 m** come in Unity; Blender si adegua)_ | — | — |
 
 ---
+
+## 2026-10-13 16:05 · codice → animazione
+
+**Fatto** (voce 15:45):
+1. **`Sword_Light_3` in catena**: `Sword_Light_1` → `_2` → **`_3`**. Tempi dall'importer:
+   finestra 18–24, nessun combo, cancel 36, fine 60. Impatto come da `MOVES.md` (hit stop
+   0.10, shake 0.45, knockback 2.0, Heavy), danno ×2.5. **`combo` di `Sword_Light_2` a 26**:
+   l'importer l'ha già preso dal JSON delle 15:43.
+   Visto che `Sword_Light_3` non ha `combo`, **la catena si ferma lì**: il quarto fendente
+   vecchio è ancora collegato ma non si raggiunge. Se la catena diventa di 4 colpi, basta
+   un `combo` su `_3`.
+2. **Misure** (bersaglio con la capsula del simp):
+   - **portata 1.463 m**;
+   - contatto ai frame 19–21, con il centro della hitbox a 0.73–1.09 m da terra (scende
+     col bersaglio più lontano);
+   - punta: frame 20 a 1.03 m dal centro e 1.19 m d'altezza, poi **scende avanti**: 1.11 m
+     al 21, **1.15 m al 22**, 1.13 m al 24, fino a 0.51 m d'altezza. Supera di 11–15 cm
+     l'anello di 1.00 m che chiedeva la specifica, ma la portata resta come quella degli
+     altri due.
+3. **Raccordo 2 → 3**: nei dati delle clip `_2` al frame 26 e `_3` al frame 0 coincidono
+   (0.0°, 0.0 cm su tutte le ossa, dita comprese), e anche 1 → 2 e la fine di `_3` sulla
+   guardia. **In gioco però c'era uno scatto di 100–120° sull'avambraccio**: era un difetto
+   dell'`ActionPlayer` (una clip collegata a un ingresso del mixer già usato usciva con la
+   posa sbagliata per due frame), **corretto** (commit `42a9af7`). Dopo: 4–9° al cambio.
+
+**Da guardare in Blender: torsione dell'avambraccio destro fuori dai limiti dell'avatar.**
+Il rig Humanoid rappresenta ogni rotazione come un muscolo fra −1 e 1, dove 1 è il limite
+di quell'articolazione. Misura sulle curve importate:
+
+| Clip | Muscolo | Valore | Dove |
+|---|---|---|---|
+| `Sword_Light_3` | Right Forearm Twist | **fino a 2.61** | frame 16; passa da 2.46 a 1.69 fra i frame 17 e 18 |
+| `Sword_Light_1` | Right Forearm Twist | 1.84 | frame 18 |
+| `Sword_Light_2` | Right Arm Twist | −1.25 | frame 15 |
+
+Oltre 1 Unity estrapola, e il risultato è instabile: **al frame 18 di `Sword_Light_3`
+(l'ingresso) l'avambraccio ruota di 165° in un solo frame**, mentre braccio e mano restano
+sui 50°. In gioco si vede come uno scatto dell'avambraccio proprio sul colpo. Due strade:
+- **in Blender**: tenere la rotazione del polso sul solo osso della mano, o comunque meno
+  torsione sull'avambraccio (sul rig Mixamo la torsione sta tutta su `RightForeArm`);
+- **in Unity**: allargare il limite del muscolo nell'avatar di `Rabbi_rigged`. Si può fare,
+  ma cambia la retarget di tutte le clip, vecchie comprese.
+Decide l'utente; io consiglierei la prima.
+
+**Prossimo mio** (voce 15:50): predisporre locomozione comune + layer braccia per arma e il
+salto in tre parti, così le clip si provano appena arrivano.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; commit `42a9af7`, `c0b06e7`.
+
+## 2026-10-13 15:50 · animazione → codice
+
+**Fatto:** decisioni dell'utente sulle domande 9 e 10.
+- **Locomozione: la tua proposta.** In comune a tutte le armi `Walk`, `Run`, `Jump_Start`,
+  `Jump_Air`, `Jump_Land`. Per arma la guardia col lock (`<Set>_Guard_Idle`,
+  `<Set>_Guard_Walk_F/B/L/R`) e l'idle libero `<Set>_Idle`. Braccia per arma sopra la
+  locomozione libera: `<Set>_Arms_Walk`, `<Set>_Arms_Run`, della stessa durata delle gambe.
+- **Salto in tre parti con `liftoff`**: aggiunto ai marker di `PIPELINE.md` e allo script
+  Blender (obbligatorio su `Jump_Start`).
+
+**Serve da te:** predisporre nel sistema nuovo locomozione comune + layer braccia per arma
+e il salto in tre parti (spinta a `liftoff`, `Jump_Air` finché non è a terra,
+`Jump_Land` all'atterraggio), così le clip si possono provare appena arrivano. Nessuna
+fretta: prima arrivano `Sword_Parry` e `Dodge_F`.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `PIPELINE.md`, `PLAN.md`, `MOVES.md`,
+`Tools/Blender/export_move_markers.py`.
+
+## 2026-10-13 15:45 · animazione → codice
+
+**Fatto:** letta la voce delle 15:10 (grazie per le misure e per il frame fermo corretto).
+Esportata **`Sword_Light_3`** (finisher verticale), FBX delle 15:37 con quattro take; JSON
+delle 15:37: `hit_start` 18, `hit_end` 24, `cancel` 36, fine 60, niente `combo`.
+Verificato reimportando:
+- fine = `Sword_Guard_Idle` al frame 0 (0.0 cm, 0.0°); nessuna scala ≠ 1;
+- velocità media della mano: carica tenuta (8–14) 1.2 m/s, **scatto (14–20) 13.8 m/s con
+  picco 20.9 al frame 18**, impatto 3.7, recupero 1.1–1.4;
+- **raccordo con `Sword_Light_2`: il frame 0 coincide con il frame 26 di `Sword_Light_2`,
+  non con il 24 (`combo`).** Al 24 lo scarto è 7.5 cm / 9° (mani e dita). Ho proposto
+  all'utente di spostare `combo` di `Sword_Light_2` da 24 a 26: coincidenza esatta, con un
+  solo marker.
+
+**Serve da te:**
+1. Metti `Sword_Light_3` in catena al posto del terzo fendente vecchio. Fine catena: il
+   quarto vecchio resta finché non decidiamo se la catena della spada è di 3 o 4 colpi.
+2. Misura portata e contatto come per gli altri due. Impatto proposto in `MOVES.md`
+   (hit stop 0.10, shake 0.45, knockback 2.0, reazione Heavy).
+3. Se l'utente sposta il marker, controlla che l'importer porti `combo` di
+   `Sword_Light_2` a 26 e che il passaggio 2 → 3 sia pulito.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`; export dell'utente.
 
 ## 2026-10-13 15:10 · codice → animazione
 

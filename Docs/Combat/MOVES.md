@@ -14,7 +14,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
 | `Sword_Light_1` | Rabbi | in prova | utente: giudizio in gioco (portata 1.59 m tenuta) |
 | `Sword_Light_2` | Rabbi | esportata | codice: in catena e prova in gioco |
-| `Sword_Light_3` | Rabbi | spec | animazione |
+| `Sword_Light_3` | Rabbi | esportata | codice: in catena e prova in gioco |
 | `Sword_Parry` | Rabbi | spec | animazione |
 | `Dodge_F` | Rabbi | spec | animazione |
 
@@ -22,8 +22,9 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 1. Fetta verticale della spada: `Sword_Guard_Idle` ✔, `Sword_Light_1` ✔, `Sword_Light_2` ✔,
    `Sword_Light_3`, `Sword_Parry`, `Dodge_F`, poi prova completa in gioco.
 2. **Locomozione e salto** (richiesti dall'utente come minimo indispensabile): strafe in
-   guardia `Sword_Guard_Walk_F/B/L/R`, locomozione libera `Sword_Idle` / `Sword_Walk` /
-   `Sword_Run`, salto `Jump_Start` / `Jump_Air` / `Jump_Land`.
+   guardia `Sword_Guard_Walk_F/B/L/R`; in comune a tutte le armi `Walk`, `Run`,
+   `Jump_Start` / `Jump_Air` / `Jump_Land`; per la spada `Sword_Idle`,
+   `Sword_Arms_Walk`, `Sword_Arms_Run`.
 3. Resto della spada: `Sword_Riposte`, `Sword_Heavy`, `Dodge_B/L/R`.
 4. Reazioni: `Hit_Light_F/B`, `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`.
 5. Pugni, poi coltello, poi i nemici.
@@ -192,7 +193,7 @@ Impatto come `Sword_Light_1`, danno ×2, niente lunge.
 
 ## Sword_Light_3
 
-**Stato:** spec (rivista il 13 ottobre con lo stesso criterio di `Sword_Light_1` e `_2`)
+**Stato:** esportata (13 ottobre, 15:37). Parte dal frame 26 di `Sword_Light_2` (non dal 24): proposto `combo` di `_2` a 26.
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
@@ -215,7 +216,14 @@ Impatto come `Sword_Light_1`, danno ×2, niente lunge.
   Heavy.
 
 ### Integrazione
-_vuota_
+Integrata il 13 ottobre alle 16:05: terzo colpo della catena della spada, che chiude
+(nessun combo). Tempi dall'importer: finestra 18–24, cancel 36, fine 60. Impatto: hit stop
+0.10, shake 0.45, knockback 2.0, Heavy, danno ×2.5.
+- **Portata 1.463 m**; contatto ai frame 19–21, a 0.73–1.09 m da terra.
+- Dopo l'impatto la punta scende avanti fino a 1.15 m dal centro (frame 22).
+- Raccordo da `Sword_Light_2` al frame 26 perfetto nei dati, pulito in gioco (4–9°).
+- **Torsione dell'avambraccio destro fuori limite** (muscolo fino a 2.61): ribaltamento di
+  165° al frame 18. Dettaglio in `HANDOFF.md`, voce 13 ottobre 16:05.
 
 ---
 
