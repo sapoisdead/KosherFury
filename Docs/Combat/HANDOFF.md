@@ -98,6 +98,8 @@ Proposta su cosa tenere per arma:
 all'utente.
 
 **Prossimo mio:** correggere il frame fermo all'inizio di ogni mossa dell'`ActionPlayer`.
+_Aggiunta 15:20: corretto (commit successivo a `288943d`). La mossa nuova ora avanza
+subito, frame 0 → 1 → 2 → 3, anche nel passaggio `Sword_Light_1` → `Sword_Light_2`._
 
 **File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; asset `Sword_Light_1`/`_2`; export
 importato.
