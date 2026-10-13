@@ -116,7 +116,8 @@ public class ActionPlayer : MonoBehaviour
         var clipPlayable = AnimationClipPlayable.Create(graph, move.clip);
         clipPlayable.SetApplyFootIK(false);
         clipPlayable.SetSpeed(move.speed);
-        clipPlayable.SetTime(0);
+        // niente SetTime(0): il playable nasce gia' a 0, e dopo un SetTime Unity non fa
+        // avanzare il tempo nel frame successivo, che diventava un frame fermo a ogni mossa
         clipPlayable.SetDuration(move.clip.length);
         graph.Connect(clipPlayable, 0, mixer, slot);
         slots[slot] = clipPlayable;
