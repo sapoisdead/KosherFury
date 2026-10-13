@@ -22,7 +22,7 @@ MonoBehaviour:
   - slot: 4
     startFrame: 14
     endFrame: 20
-  comboFrame: 24
+  comboFrame: 26
   cancelFrame: 30
   parryStartFrame: -1
   parryEndFrame: -1
@@ -63,5 +63,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  nextLight: {fileID: 11400000, guid: 3c6e2f152c35b484e9b3445eb6221a1b, type: 2}
+  nextLight: {fileID: 11400000, guid: 9b2b8a9c0f6ad45ecba5b0228e1ee301, type: 2}
   nextHeavy: {fileID: 0}

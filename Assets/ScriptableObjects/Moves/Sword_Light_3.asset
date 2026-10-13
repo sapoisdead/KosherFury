@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0afe9bbe323a40cfa38292cfd499303, type: 3}
-  m_Name: Legacy_Sword_Sword_Pierce
+  m_Name: Sword_Light_3
   m_EditorClassIdentifier: Assembly-CSharp::MoveData
   kind: 0
-  clip: {fileID: -2773303154023273516, guid: 76dd73d7c9e2444ab9eeb16fba0dd90a, type: 3}
-  speed: 1.8666668
-  fadeIn: 0.02
-  fadeOut: 0.2
-  endFrame: -1
+  clip: {fileID: 4239128886347980623, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
+  speed: 1
+  fadeIn: 0.05
+  fadeOut: 0.1
+  endFrame: 60
   hitWindows:
   - slot: 4
-    startFrame: 27
-    endFrame: 32.142857
-  comboFrame: 40.949997
-  cancelFrame: -1
+    startFrame: 18
+    endFrame: 24
+  comboFrame: -1
+  cancelFrame: 36
   parryStartFrame: -1
   parryEndFrame: -1
   whiffRecoveryFrames: 0
@@ -32,11 +32,11 @@ MonoBehaviour:
   rootMotion: 0
   rootMotionScale: 1
   damageMultiplier: 2.5
-  hitStop: 0.07
-  cameraShake: 0.35
-  knockback: 3.5
+  hitStop: 0.1
+  cameraShake: 0.45
+  knockback: 2
   impactReaction: 2.5
-  reactionType: 0
+  reactionType: 1
   armorWhileActive: 1
   lungeDistance: 0
   lungeCurve:
