@@ -179,6 +179,8 @@ v1 e v2 restano nel progetto finché ogni mossa non è sostituita.
 - `Dodge_F/B/L/R` (diagonali dopo): ~24 frame, invulnerabilità ~3–14
 - `Hit_Light_F`, `Hit_Light_B`, `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`
 - `Weapon_Switch` (~8 frame)
+- Salto in tre parti: `Jump_Start` (stacco, marker `liftoff` dove il codice dà la spinta),
+  `Jump_Air` (in volo, ciclica: vale anche per le cadute), `Jump_Land` (atterraggio)
 - Per ogni stance, locomozione libera: `<Set>_Idle`, `<Set>_Walk`, `<Set>_Run`
 - Per ogni stance, in guardia (lock): `<Set>_Guard_Idle`, `<Set>_Guard_Walk_F/B/L/R`
   (stessa durata)
@@ -197,6 +199,9 @@ v1 e v2 restano nel progetto finché ogni mossa non è sostituita.
    tempi attuali, così il gioco resta giocabile durante il rifacimento.
 5. Importer dei marker da JSON.
 6. Aggiornamento di CLAUDE.md.
+
+**Priorità decisa il 13 ottobre:** subito dopo la fetta verticale della spada vengono
+**corsa, strafe e salto** (sono le animazioni che si vedono di più), poi il resto.
 
 **Fase B, animazione (Blender), in parallelo alla Fase A.** Le mosse esportate si
 integrano quando esistono il nuovo sistema e l'importer (A.3 e A.5). Fetta verticale

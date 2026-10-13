@@ -63,5 +63,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  nextLight: {fileID: 11400000, guid: 80e1addfa40e54e62b42591053c0124b, type: 2}
+  nextLight: {fileID: 11400000, guid: 64c54e857048344b09ad2aec06caf426, type: 2}
   nextHeavy: {fileID: 0}

@@ -94,10 +94,27 @@ def main():
     character, blend = character_name()
 
     actions = {}
+    skipped = []
     for act in sorted(bpy.data.actions, key=lambda a: a.name):
         if not act.use_fake_user:
+            skipped.append(act.name)
             continue
         actions[act.name] = check_action(act, problems)
+
+    if not actions:
+        # Un JSON vuoto in Unity non porterebbe nessun tempo: meglio non scriverlo.
+        detail = ", ".join(skipped) if skipped else "nessuna action nel file"
+        msg = f"Nessuna action con Fake User: niente scritto. Action senza Fake User: {detail}"
+        print("\n=== export_move_markers ===\n  ERRORE: " + msg)
+        if not bpy.app.background:
+            bpy.context.window_manager.popup_menu(
+                lambda self, ctx: [self.layout.label(text=x) for x in
+                                   ["Niente scritto: nessuna action con Fake User (scudo).",
+                                    "Senza Fake User: " + detail[:180]]],
+                title="Export marker annullato", icon="ERROR")
+        return
+    for name in skipped:
+        problems.append(f"{name}: senza Fake User, non esportata")
 
     out_dir = os.path.join(UNITY_PROJECT, "Assets", "Art", character, "Animations")
     if not os.path.isdir(out_dir):

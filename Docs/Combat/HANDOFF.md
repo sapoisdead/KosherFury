@@ -19,6 +19,8 @@ Formato di una voce:
 
 | # | Domanda | Per | Aperta da |
 |---|---|---|---|
+| 9 | **Locomozione per arma o in comune?** Risposta del codice (15:10): **sì, fattibile**, con una proposta su cosa tenere per arma (vedi voce). Manca la scelta. | utente | animazione |
+| 10 | **Salto in tre parti**: risposta del codice (15:10): **sì, fattibile**, e risolve un problema di oggi (l'animazione finisce prima dell'atterraggio). Fisica attuale nella voce. Manca l'ok dell'utente al marker `liftoff` in `PIPELINE.md`. | utente | animazione |
 | 1 | _(risolta: percorso del `.blend` annotato in `PIPELINE.md`)_ | — | — |
 | 2 | _(risolta 12:41: *Copy From Other Avatar* da `Rabbi_rigged`, annotato in `PIPELINE.md`)_ | — | — |
 | 3 | _(risolta 11:35: scartare `8bf3b91` e `d9efa2e`)_ | — | — |
@@ -29,6 +31,133 @@ Formato di una voce:
 | 8 | _(risolta 12:43: vale l'altezza del modello originale, **1.60 m** come in Unity; Blender si adegua)_ | — | — |
 
 ---
+
+## 2026-10-13 15:10 · codice → animazione
+
+**Fatto:**
+1. **`Sword_Light_2` in catena**: `Sword_Light_1` → **`Sword_Light_2`** → fendenti vecchi 3 e 4.
+   `MoveData` nuovo (`Assets/ScriptableObjects/Moves/Sword_Light_2.asset`): impatto come
+   `Sword_Light_1`, danno ×2, niente lunge. I tempi li ha scritti l'importer: finestra
+   14–20, combo 24, cancel 30, fine 50. La copia del secondo fendente vecchio è cancellata.
+2. **Misure** (Play Mode, bersaglio con la capsula del simp, spada con hitbox sottile):
+   - **portata 1.456 m** fra i centri (`Sword_Light_1`: 1.594);
+   - contatto a 1.0 / 1.2 / 1.4 m ai frame 14.0 / 16.25 / 17.75, con il centro della
+     hitbox a 0.87–0.88 m da terra;
+   - punta nella finestra: arco orizzontale a **1.01–1.04 m** dal centro, alto **0.95–0.97
+     m**, da sinistra (frame 14, 0.83 m di lato) a destra (frame 20, 0.40 m). È il rovescio
+     laterale previsto, e infatti non allunga la portata.
+3. **Passaggio 1 → 2 in gioco (catena vera, a 60 Hz): nessuno scatto.** Al cambio la
+   rotazione massima delle ossa è 14.7° in un frame, contro i 22° dei frame subito prima
+   dentro `Sword_Light_1`, e il crossfade fa il resto.
+   Due cose viste:
+   - **Un frame fermo al cambio**: la mossa nuova resta al tempo 0 per due frame, cioè
+     16 ms di pausa. È un ritardo di un frame che l'`ActionPlayer` aggiunge all'inizio di
+     **ogni** mossa: è lato codice, lo correggo io (vedi sotto).
+   - **Dita**: ai frame 2–3 di `Sword_Light_2` l'anulare destro (`RightHandRing3`) ruota di
+     **48° in un frame**. Forse un cambio di presa troppo secco, da guardare.
+4. **Avviso sulla scala del piede (voce 14:20)**: c'è ancora, ma non è una chiave vera.
+   Importando l'FBX come Generic, le scale dei piedi sono fra 0.9999955 e 1.000005 in tutte
+   e tre le clip: è rumore numerico del bake dell'IK. Unity lo segnala solo per
+   `Sword_Light_1` e comunque lo scarta. **Non serve fare niente.**
+
+**Domanda 9 (gambe in comune, braccia per arma): fattibile.** Il controller di oggi lo fa
+già: il layer `Weapon_Overlay` ha una maschera su busto e braccia e sovrascrive la posa
+delle braccia sopra la locomozione. Le mosse (colpi, parate, schivate) restano a corpo
+intero: le suona l'`ActionPlayer`, sopra a tutto.
+Proposta su cosa tenere per arma:
+- **In comune:** locomozione libera (`Walk`, `Run`) e salto. Le gambe sono uguali.
+- **Per arma:** la **guardia** (`<Set>_Guard_Idle` e `<Set>_Guard_Walk_F/B/L/R`). È la
+  guardia a definire lo stance, e lo stance passa da bacino e piedi: `Sword_Guard_Idle` ha il
+  bacino girato di 30°, che una guardia a mani nude non avrà. Con le gambe in comune, gli
+  strafe della spada camminerebbero frontali.
+- **Braccia per arma sulla locomozione libera:** pose ferme o cicli della **stessa durata**
+  della clip di gambe, così non vanno fuori fase (vale la stessa regola delle 4 direzioni).
+- Conto: circa 5 comuni + 5 di guardia per arma + 1–2 pose di braccia per arma, invece di
+  circa 3×9.
+
+**Domanda 10 (salto in tre parti): fattibile, e meglio di oggi.** Come funziona adesso
+(misura sui file):
+- `jumpHeight` **1.5 m**, `gravity` **−20 m/s²** (prefab). Velocità di stacco
+  √(2·1.5·20) = **7.75 m/s**, apice dopo **0.39 s**, in aria **0.77 s** su terreno piano
+  (calcolo).
+- La spinta arriva con l'evento `OnElevating` al tempo 0 della clip `Jump` (v1, speed 2):
+  in pratica al primo frame.
+- **La clip dura 0.52 s** (esce a 0.9), quindi **finisce 0.25 s prima dell'atterraggio**:
+  oggi il personaggio torna alla locomozione mentre è ancora in aria. Non c'è nessun
+  riconoscimento dell'atterraggio.
+- **Controllo in aria pieno**: in aria ci si muove alla stessa velocità che a terra
+  (camminata 2.8, corsa 7.0), anche agganciati. Il buffer del comando è 0.15 s.
+- Col sistema nuovo: `Jump_Start` suonata come mossa, spinta al marker **`liftoff`** al
+  posto dell'evento; `Jump_Air` ciclica finché `CharacterController.isGrounded` è falso;
+  `Jump_Land` quando torna vero. Così la durata in aria la decide la fisica, non la clip.
+  Per `PIPELINE.md` serve solo il marker `liftoff`, ma va prima l'ok dell'utente.
+- Per le clip: lo stacco deve arrivare a `liftoff` con le gambe già in spinta, e
+  `Jump_Air` deve reggere da 0.1 a ~0.8 s di volo (e oltre, per le cadute).
+
+**Serve da te:** guardare le dita a inizio `Sword_Light_2`. Le domande 9 e 10 passano
+all'utente.
+
+**Prossimo mio:** correggere il frame fermo all'inizio di ogni mossa dell'`ActionPlayer`.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; asset `Sword_Light_1`/`_2`; export
+importato.
+
+## 2026-10-13 15:05 · animazione → codice
+
+**Fatto:** l'utente ricorda che servono **almeno corsa, strafe e salto**. Messi subito dopo
+la fetta verticale della spada (ordine in `MOVES.md`, priorità in `PLAN.md`). Specifica di
+`Sword_Light_3` rivista: 60 frame, `hit_start` 18, `hit_end` 24, `cancel` 36, niente `combo`
+(chiude la catena).
+
+**Serve da te:** domande aperte 9 e 10, prima che l'utente inizi la locomozione (dopo
+`Sword_Light_3`, `Sword_Parry` e `Dodge_F`). Per la 10 dimmi anche cosa usa oggi il codice
+del salto oltre a `OnElevating` (altezza, gravità, controllo in aria), così le clip
+combaciano con la fisica.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`, `PLAN.md`.
+
+## 2026-10-13 14:55 · animazione → codice
+
+**Fatto:** esportata **`Sword_Light_2`** (rovescio orizzontale), FBX delle 14:52 con tre take.
+Marker nel JSON delle 14:51: `hit_start` 14, `hit_end` 20, `combo` 24, `cancel` 30, fine 50.
+Verificato reimportando:
+- **raccordi a zero**: frame 0 = `Sword_Light_1` al frame 28 (`combo`), frame 50 =
+  `Sword_Guard_Idle` al frame 0 (0.0 cm, 0.0° su tutte le ossa);
+- nessun osso con scala ≠ 1, solo ossa `mixamorig:*`;
+- velocità media della mano: carica 3.0 m/s, carica tenuta 1.0, scatto (10–16) 7.6 con
+  picco 11.4 al frame 14, impatto 5.9, **fine corsa (20–24) 8.6**, ritorno 1.3. La fine
+  corsa è più veloce dello scatto: da valutare in gioco;
+- mano all'impatto a 0.78 m da terra, il colpo va di lato e non in avanti.
+
+Nota sul JSON: alle 14:50 per un attimo è stato scritto con zero action (l'utente aveva
+tolto i Fake User). Se l'importer l'ha letto in quel momento, i tempi giusti tornano con
+quello delle 14:51. Lo script ora non scrive più un JSON vuoto.
+
+**Serve da te:**
+1. Metti `Sword_Light_2` nella catena della spada al posto del secondo fendente vecchio
+   (`Sword_Light_1` → `Sword_Light_2` → fendenti vecchi 3 e 4).
+2. Misura come per `Sword_Light_1`: portata, frame e altezza del contatto, e controlla che
+   il passaggio `Sword_Light_1` → `Sword_Light_2` al frame 28 sia senza scatti in gioco.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`,
+`Tools/Blender/export_move_markers.py` (non scrive più JSON vuoti); export dell'utente.
+
+## 2026-10-13 14:20 · animazione → codice
+
+**Fatto:**
+- Chiave di scala sul piede destro tolta e riesportato (FBX delle 14:17). Verificato
+  reimportando: nessun osso con scala diversa da 1, in nessuna delle due clip.
+- **Portata di `Sword_Light_1`: l'utente la tiene così (1.59 m)** per ora, "vediamo come
+  viene" in gioco. Finestra 18–24 invariata.
+- Larghezza della lama: per ora resta il raggio 0.06; si allarga solo se in gioco ci sono
+  colpi che sfiorano senza entrare.
+
+**Serve da te:** reimportare (con Unity in primo piano) e controllare che l'avviso sulla
+scala del piede sia sparito. Niente altro.
+
+**Prossimo:** `Sword_Light_2`.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`; export dell'utente.
 
 ## 2026-10-13 14:10 · codice → animazione
 

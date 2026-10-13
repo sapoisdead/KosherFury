@@ -12,11 +12,21 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
 | `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
-| `Sword_Light_1` | Rabbi | esportata (rifinita) | codice: prova con hitbox sottile |
-| `Sword_Light_2` | Rabbi | spec | animazione |
+| `Sword_Light_1` | Rabbi | in prova | utente: giudizio in gioco (portata 1.59 m tenuta) |
+| `Sword_Light_2` | Rabbi | esportata | codice: in catena e prova in gioco |
 | `Sword_Light_3` | Rabbi | spec | animazione |
 | `Sword_Parry` | Rabbi | spec | animazione |
 | `Dodge_F` | Rabbi | spec | animazione |
+
+**Ordine dei lavori** (13 ottobre):
+1. Fetta verticale della spada: `Sword_Guard_Idle` ✔, `Sword_Light_1` ✔, `Sword_Light_2` ✔,
+   `Sword_Light_3`, `Sword_Parry`, `Dodge_F`, poi prova completa in gioco.
+2. **Locomozione e salto** (richiesti dall'utente come minimo indispensabile): strafe in
+   guardia `Sword_Guard_Walk_F/B/L/R`, locomozione libera `Sword_Idle` / `Sword_Walk` /
+   `Sword_Run`, salto `Jump_Start` / `Jump_Air` / `Jump_Land`.
+3. Resto della spada: `Sword_Riposte`, `Sword_Heavy`, `Dodge_B/L/R`.
+4. Reazioni: `Hit_Light_F/B`, `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`.
+5. Pugni, poi coltello, poi i nemici.
 
 **Nota sui tempi:** dopo la prova di `Sword_Light_1` i tempi di specifica delle altre
 mosse (37–50 frame) vanno rivisti con lo stesso criterio prima di animarle.
@@ -147,37 +157,62 @@ frame per frame in `HANDOFF.md` (voce 13 ottobre, 14:10). Avviso d'import: chiav
 
 ## Sword_Light_2
 
-**Stato:** spec
+**Stato:** esportata (13 ottobre, 14:52), senza posa di recupero intermedia (scelta dell'utente). Raccordi a zero.
+Da valutare in gioco: fine corsa (20–24) più veloce dello scatto, piedi che tornano in guardia in 4 frame.
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
 |---|---|---|---|---|---|
-| 10 | 5 | 22 | 18 | 23 | 37 |
+| 14 | 6 | 30 | 24 | 30 | 50 |
 
-- Ritorno: fendente da sinistra verso destra, più orizzontale.
-- Parte dalla posa finale di `Sword_Light_1`, finisce in una posa da cui parte
-  `Sword_Light_3`.
-- Hitbox: arma.
-- Impatto proposto: come `Sword_Light_1`.
+- **Rovescio**: fendente orizzontale da sinistra verso destra, all'altezza del petto del
+  bersaglio.
+- **Frame 0 = posa di `Sword_Light_1` al frame 28** (`combo`), copiata identica, controlli
+  dell'IK compresi: la catena parte da lì e il raccordo deve essere perfetto.
+- Startup più corto del primo colpo: la fine corsa di `Sword_Light_1` è già una carica.
+- Pose: 0 partenza, 6 carica (busto ancora più girato a sinistra, lama dietro l'anca
+  sinistra), 10 carica tenuta, 14 ingresso, 16 impatto, 18 impatto tenuto, 20 uscita,
+  24 fine corsa, 36 recupero, 50 guardia.
+- Posa a `combo` (frame 24) = partenza di `Sword_Light_3`: spada alta sopra la spalla
+  destra, pronta per il colpo verticale del finisher.
+- Hitbox: arma. Impatto proposto come `Sword_Light_1`. Portata: come `Sword_Light_1`
+  (un fendente orizzontale va di lato, non in avanti, quindi non dovrebbe allungarla).
 
 ### Integrazione
-_vuota_
+Integrata il 13 ottobre alle 15:10. Nella catena della spada dopo `Sword_Light_1`, prima dei
+fendenti vecchi 3 e 4. Tempi dall'importer: finestra 14–20, combo 24, cancel 30, fine 50.
+Impatto come `Sword_Light_1`, danno ×2, niente lunge.
+- **Portata 1.456 m**; contatto ai frame 14–17.75, centro della hitbox a 0.87–0.88 m da terra.
+- Punta nella finestra: arco orizzontale a 1.01–1.04 m dal centro, alta 0.95–0.97 m.
+- Passaggio da `Sword_Light_1` in gioco: nessuno scatto (14.7° al cambio, contro 22° dei
+  frame prima).
+- Da guardare: anulare destro che ruota di 48° in un frame ai frame 2–3.
 
 ---
 
 ## Sword_Light_3
 
-**Stato:** spec
+**Stato:** spec (rivista il 13 ottobre con lo stesso criterio di `Sword_Light_1` e `_2`)
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
 |---|---|---|---|---|---|
-| 14 | 6 | 30 | — | 32 | 50 |
+| 18 | 6 | 36 | — | 36 | 60 |
 
-- Finisher: colpo verticale o affondo, con passo avanti marcato.
-- Finisce in `Pose_Guard_Sword`.
-- Hitbox: arma.
-- Impatto proposto: hit stop 0.10 s, shake 0.45, knockback 2.0, reazione Heavy.
+- **Finisher**: fendente verticale dall'alto verso il basso, con passo avanti marcato.
+  Chiude la catena: niente `combo`.
+- **Frame 0 = posa di `Sword_Light_2` al frame 24** (`combo`), copiata identica, controlli
+  dell'IK compresi.
+- Più pesante dei primi due: carica più alta e tenuta più a lungo, impatto tenuto più a
+  lungo, recupero lento.
+- Pose: 0 partenza, 8 carica (spada alta sopra la testa, busto inarcato indietro, peso
+  dietro), 14 carica tenuta, 18 ingresso (passo avanti del piede sinistro), 20 impatto
+  (lama all'altezza della testa/petto del bersaglio), 24 uscita (lama in basso davanti),
+  40 recupero, 60 guardia.
+- Dopo l'impatto la lama **scende**, non va avanti: la punta non deve superare l'anello
+  azzurro (1.00 m), per tenere la portata come gli altri colpi.
+- Hitbox: arma. Impatto proposto: hit stop 0.10 s, shake 0.45, knockback 2.0, reazione
+  Heavy.
 
 ### Integrazione
 _vuota_
