@@ -12,7 +12,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
 | `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
-| `Sword_Light_1` | Rabbi | esportata (blocking, 54 f) | codice: prova del nuovo timing in gioco |
+| `Sword_Light_1` | Rabbi | esportata (rifinita) | codice: prova con hitbox sottile |
 | `Sword_Light_2` | Rabbi | spec | animazione |
 | `Sword_Light_3` | Rabbi | spec | animazione |
 | `Sword_Parry` | Rabbi | spec | animazione |
@@ -65,7 +65,8 @@ non esiste, l'anteprima in gioco è un override in memoria valido solo in Play M
 
 ## Sword_Light_1
 
-**Stato:** esportata come blocking a 54 frame (16:10). Da fare: pose tenute ai frame 14 e 22, piede sinistro piantato dopo l'impatto, impatto più alto e meno lontano (portata verso 1.40 m).
+**Stato:** esportata rifinita (16:53). Carica tenuta e scatto ok. Da valutare in gioco: impatto
+poco tenuto (la mano scende ancora a 5 m/s fra 20 e 24) e piede sinistro che arretra fra 21 e 24.
 
 ### Specifica
 | Startup | Attivi | Recovery | `combo` | `cancel` | Totale |
@@ -133,6 +134,14 @@ di A.3. Impatto: hit stop 0.06, shake 0.25, knockback 1.0, danno ×2. Niente lun
 - Raccordi: primo e ultimo frame identici a `Sword_Guard_Idle` (0.0°, 0.0 cm).
 - Mano destra al frame 21: 0.53 m avanti, 0.59 m da terra.
 - Catena (con un `nextLight` di prova): il colpo successivo parte esattamente al frame 28.
+
+**Export rifinito (16:53) e hitbox sottile, misurati il 13 ottobre alle 14:10.** Capsula
+della spada a raggio 0.06, dall'elsa alla punta. Portata **1.594 m**; contatto a 1.20–1.40 m
+al frame 21, con il centro della hitbox a 0.91 m da terra. All'impatto (frame 20) la punta
+sta a 0.89 m dal centro del Rabbi e a 1.36 m d'altezza. Ai frame 22–23 l'accompagnamento la
+porta a 1.135–1.235 m, più in basso (1.07–0.82 m), ed è da lì che viene la portata. Dettaglio
+frame per frame in `HANDOFF.md` (voce 13 ottobre, 14:10). Avviso d'import: chiave di scala su
+`mixamorig:RightFoot`, scartata da Unity.
 
 ---
 

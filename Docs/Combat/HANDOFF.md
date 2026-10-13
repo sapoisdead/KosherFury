@@ -30,6 +30,95 @@ Formato di una voce:
 
 ---
 
+## 2026-10-13 14:10 · codice → animazione
+
+**Fatto** (voci 16:55 e 17:00):
+1. **Hitbox della spada** (commit `f0884f7`): capsula di `AbramKnife` › `WeaponHitbox`
+   con raggio **0.06**, sulla mezzeria della lama, **dall'elsa alla punta** (lunga 0.787 m,
+   negli assi dell'arma da z 0.22 a z 1.007). La forma resta nel prefab dell'arma
+   (`AbramKnife_Hand`), accanto alla mesh da cui è ricavata: è il posto più semplice da
+   tenere allineato. `Izmel` invariato.
+   **Da sapere:** la lama di `AbramKnife` è **larga 23–29 cm** sul piano (misura sui
+   vertici). Con raggio 0.06 la capsula copre i 12 cm centrali, e i bordi restano fuori
+   di 5–8 cm per lato. Se il taglio deve contare col filo, il raggio va alzato o la
+   capsula spostata verso il filo.
+2. **Export rifinito importato**: clip a 54 frame, tempi invariati (18/24/28/34).
+   L'importer funziona, ma la coda dell'editor parte solo con Unity in primo piano: dopo
+   un export, i tempi si aggiornano quando l'utente torna in Unity (commit `a9613f1`).
+3. **Avviso d'import su `Sword_Light_1`**: `'mixamorig:RightFoot' has scale animation that
+   will be discarded`. C'è una chiave di **scala** sul piede destro (forse un ritocco
+   fatto per sbaglio): Unity la butta, e quindi in gioco non si vede. Va tolta in Blender.
+4. **Misure** con hitbox sottile e clip rifinita (Play Mode, bersaglio con la capsula del simp):
+
+   | Bersaglio a | Colpito | Frame del contatto | Centro hitbox da terra |
+   |---|---|---|---|
+   | 1.00 m | sì | 19.25 | 1.11 m |
+   | 1.20 m | sì | 21.25 | 0.91 m |
+   | 1.40 m | sì | 21.25 | 0.91 m |
+
+   **Portata 1.594 m** (attesa 1.50). Il motivo, punta della lama frame per frame (distanza
+   orizzontale dal centro del Rabbi, e altezza):
+
+   | Frame | 18 | 19 | 20 | 21 | 22 | 23 | 24 |
+   |---|---|---|---|---|---|---|---|
+   | Distanza | 0.965 | 0.889 | 0.893 | 0.985 | 1.135 | **1.235** | 1.255 |
+   | Altezza | 1.32 | 1.42 | 1.36 | 1.26 | 1.07 | 0.82 | 0.62 |
+
+   All'impatto (frame 20) la punta in Unity sta a **0.89 m**, non a 1.04. La portata
+   viene dall'**accompagnamento**: ai frame 22–23, ancora dentro la finestra, la lama
+   scende in avanti fino a 1.235 m (1.235 + 0.06 + 0.40 ≈ 1.59). Per avvicinarsi a 1.40
+   si può chiudere la finestra prima (`hit_end` 22 → circa 1.45, 21 → circa 1.42), o
+   tenere l'accompagnamento più raccolto. Decide l'utente.
+
+**Serve da te:** la chiave di scala sul piede destro, e la scelta sulla finestra o
+sull'accompagnamento. Il trail è annotato per quando arriveremo ai VFX.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; commit `f0884f7`, `a9613f1`;
+import dell'export rifinito.
+
+## 2026-10-12 17:00 · animazione → codice
+
+**Fatto:** letta la voce delle 16:40 (A.4): nomi `Sword_Light_2` / `_3` confermati. Nuovo
+export di `Sword_Light_1` **rifinito** (FBX delle 16:53; marker invariati, 18 / 24 / 28 /
+34 su 54 frame, quindi il JSON delle 16:09 resta valido). Verificato reimportando:
+- curve rifinite con contrasto netto. Velocità media della mano: carica 5.0 m/s, carica
+  tenuta (10–14) 0.5 m/s, **scatto (14–20) 14.7 m/s con picco di 24.6 al frame 17**,
+  impatto (20–24) 5.3 m/s, ritorno (40–54) 0.8 m/s;
+- raccordi con la guardia invariati, solo ossa `mixamorig:*`.
+
+**Serve da te:**
+1. Reimporta (l'importer dovrebbe partire da solo) e, insieme alla hitbox sottile della
+   voce 16:55, rimisura **portata** e **altezza del contatto** di `Sword_Light_1`.
+2. Nota per più avanti, non urgente: con la lama che al frame 17 si muove di oltre 40 cm
+   per frame, il colpo avrà bisogno di una **scia** (trail) sulla spada per leggersi.
+   Quando arriveremo ai VFX, partirei da lì.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `Docs/Combat/MOVES.md`; export dell'utente.
+
+## 2026-10-12 16:55 · animazione → codice
+
+**Fatto:** la portata di `Sword_Light_1` (1.625 m) è lunga per colpa della **hitbox**, non
+dell'animazione. Al contatto la punta della lama sta a ~1.04 m dal centro del Rabbi, cioè
+sulla faccia del bersaglio a 1.40 m: visivamente il colpo è giusto. Sono i 18.6 cm di
+raggio della capsula di `AbramKnife` a farlo entrare prima. Conto:
+`portata ≈ distanza della punta + raggio della hitbox + 0.40`.
+
+**Decisione dell'utente: assottigliare la hitbox della spada.**
+
+**Serve da te:**
+1. Capsula di `AbramKnife` › `WeaponHitbox` con raggio intorno a **0.06 m**, **allineata
+   alla lama** e lunga quanto la lama (dall'elsa alla punta), così si colpisce dove la
+   lama tocca davvero. Portata attesa ~1.50 m: rimisurala con `Sword_Light_1`.
+2. Se il sistema nuovo ha un posto migliore per definire forma e misura della hitbox
+   dell'arma (es. in `WeaponData` o nel `Moveset`), usalo pure, e annotalo.
+3. Lascia invariata la hitbox di `Izmel` (coltello): la tocchiamo quando arriveremo al
+   coltello.
+
+L'utente sta rifinendo `Sword_Light_1` (curve, pose tenute, piede piantato): ci sarà un
+nuovo export a breve.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-12 16:40 · codice → animazione
 
 **Fatto:** **A.4** (commit `ffb1dbf`). Tutto il combattimento del player gira sul sistema
