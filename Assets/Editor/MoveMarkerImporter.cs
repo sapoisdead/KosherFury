@@ -24,7 +24,11 @@ public class MoveMarkerImporter : AssetPostprocessor
 {
     private const string JsonSuffix = "_anim_events.json";
     private const string FbxSuffix = "_anim.fbx";
-    private static readonly HashSet<string> Pending = new();
+
+    // JSON da importare. Sta in SessionState e non in un campo statico: un import seguito
+    // da una ricarica del dominio (script ricompilati nello stesso refresh) azzererebbe i
+    // campi statici e perderebbe la chiamata rimandata. Al caricamento si riprende da qui.
+    private const string PendingKey = "KosherFury.MoveMarkerImporter.Pending";
 
     [MenuItem("KosherFury/Combat/Import Move Markers")]
     public static void ImportAll()
@@ -43,15 +47,34 @@ public class MoveMarkerImporter : AssetPostprocessor
             string json = path.EndsWith(JsonSuffix) ? path
                         : path.EndsWith(FbxSuffix) ? path.Substring(0, path.Length - FbxSuffix.Length) + JsonSuffix
                         : null;
-            if (json == null || !File.Exists(json) || !Pending.Add(json)) continue;
-
-            // fuori dall'import in corso: reimportare l'FBX da qui dentro non e' permesso
-            EditorApplication.delayCall += () =>
-            {
-                Pending.Remove(json);
-                Debug.Log(Import(json));
-            };
+            if (json == null || !File.Exists(json)) continue;
+            AddPending(json);
         }
+    }
+
+    [InitializeOnLoadMethod]
+    private static void ResumeAfterReload() => SchedulePending();
+
+    private static void AddPending(string json)
+    {
+        var pending = new HashSet<string>(SessionState.GetString(PendingKey, "").Split('|').Where(x => x.Length > 0));
+        if (pending.Add(json)) SessionState.SetString(PendingKey, string.Join("|", pending));
+        SchedulePending();
+    }
+
+    // Fuori dall'import in corso: reimportare l'FBX da dentro un import non e' permesso.
+    private static void SchedulePending()
+    {
+        EditorApplication.delayCall -= ProcessPending;
+        EditorApplication.delayCall += ProcessPending;
+    }
+
+    private static void ProcessPending()
+    {
+        string list = SessionState.GetString(PendingKey, "");
+        SessionState.EraseString(PendingKey);
+        foreach (var json in list.Split('|').Where(x => x.Length > 0).Distinct())
+            if (File.Exists(json)) Debug.Log(Import(json));
     }
 
     // ---------------------------------------------------------------- import
