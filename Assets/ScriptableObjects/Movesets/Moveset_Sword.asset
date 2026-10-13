@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Moveset
   light: {fileID: 11400000, guid: 1415726ddd67b4ce2a5df11418cd26f2, type: 2}
   heavy: {fileID: 11400000, guid: 166cdf2f66a2d455dac4f3213abdc619, type: 2}
-  parry: {fileID: 11400000, guid: 07bf89a158d9941d2813e09a48feceee, type: 2}
+  parry: {fileID: 11400000, guid: d2ba8a9fd22234a1793aa96cb8045ca3, type: 2}
   riposte: {fileID: 0}
   dodgeForward: {fileID: 11400000, guid: 61fb87801ef4e4d558e8bf3acc8c0a3b, type: 2}
   dodgeBack: {fileID: 11400000, guid: 2aa10b031c76d4590ac7545db3afaeab, type: 2}
