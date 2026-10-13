@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -12,12 +13,16 @@ using UnityEngine.Playables;
 // 1 durante la mossa. Il controller continua a girare sotto. Quando il controller sara'
 // ridotto alla sola locomozione potra' restare cosi' o diventare un input del grafo.
 //
-//   [AnimationClipPlayable slot A] \
-//                                   > AnimationMixerPlayable -> AnimationPlayableOutput (peso) -> Animator
-//   [AnimationClipPlayable slot B] /
+//   [AnimationClipPlayable mossa 1] \
+//   [AnimationClipPlayable mossa 2]  > AnimationMixerPlayable -> AnimationPlayableOutput (peso) -> Animator
+//   [...]                           /
 //
-// Due slot alternati: una mossa nuova entra nello slot libero e prende peso mentre
-// quella vecchia lo perde, cosi' due colpi in catena si fondono invece di scattare.
+// Ogni mossa entra in un ingresso NUOVO del mixer e prende peso mentre la precedente lo
+// perde, cosi' due colpi in catena si fondono invece di scattare. Un ingresso non si
+// riusa mai: una clip collegata dove ne era appena stata tolta un'altra usciva con la
+// posa sbagliata per un paio di frame (misurato: 100-120 gradi di salto sull'avambraccio
+// al cambio). Quando non si vede piu' nessuna mossa il mixer si ricrea da zero, quindi
+// gli ingressi crescono solo dentro una catena.
 //
 // Le finestre attive si aprono confrontando il tempo della mossa con il MoveData, non
 // con animation event: gli eventi sono spenti finche' la mossa ha peso (vedi
@@ -40,9 +45,10 @@ public class ActionPlayer : MonoBehaviour
     private PlayableGraph graph;
     private AnimationMixerPlayable mixer;
     private AnimationPlayableOutput output;
-    private readonly AnimationClipPlayable[] slots = new AnimationClipPlayable[2];
-    private readonly float[] slotWeights = new float[2];
-    private int activeSlot = -1;
+    private readonly List<AnimationClipPlayable> inputs = new();   // per ingresso del mixer
+    private readonly List<float> weights = new();
+    private int activeInput = -1;
+    private AnimationClipPlayable Active => activeInput >= 0 ? inputs[activeInput] : default;
 
     private MoveData current;
     private bool[] windowOpened;
@@ -83,7 +89,7 @@ public class ActionPlayer : MonoBehaviour
 
         graph = PlayableGraph.Create($"{name}.Actions");
         graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
-        mixer = AnimationMixerPlayable.Create(graph, 2);
+        mixer = AnimationMixerPlayable.Create(graph, 0);
         output = AnimationPlayableOutput.Create(graph, "Actions", animator);
         output.SetSourcePlayable(mixer);
         output.SetWeight(0f);
@@ -106,12 +112,8 @@ public class ActionPlayer : MonoBehaviour
         // continuerebbe a colpire durante quella nuova
         CloseAllWindows();
 
-        int slot = activeSlot < 0 ? 0 : 1 - activeSlot;
-        if (slots[slot].IsValid())
-        {
-            graph.Disconnect(mixer, slot);
-            slots[slot].Destroy();
-        }
+        // niente di visibile: si riparte da un mixer pulito
+        if (outputWeight <= 0f && inputs.Count > 0) ResetMixer();
 
         var clipPlayable = AnimationClipPlayable.Create(graph, move.clip);
         clipPlayable.SetApplyFootIK(false);
@@ -119,18 +121,18 @@ public class ActionPlayer : MonoBehaviour
         // niente SetTime(0): il playable nasce gia' a 0, e dopo un SetTime Unity non fa
         // avanzare il tempo nel frame successivo, che diventava un frame fermo a ogni mossa
         clipPlayable.SetDuration(move.clip.length);
-        graph.Connect(clipPlayable, 0, mixer, slot);
-        slots[slot] = clipPlayable;
+        activeInput = mixer.AddInput(clipPlayable, 0, 0f);
+        inputs.Add(clipPlayable);
+        weights.Add(0f);
 
-        // senza una mossa visibile il nuovo slot parte gia' pieno: il crossfade lo fa
+        // senza una mossa visibile il nuovo ingresso parte gia' pieno: il crossfade lo fa
         // il peso dell'uscita, dalla locomozione
         if (outputWeight <= 0f)
         {
-            slotWeights[slot] = 1f;
-            slotWeights[1 - slot] = 0f;
+            weights[activeInput] = 1f;
+            mixer.SetInputWeight(activeInput, 1f);
         }
 
-        activeSlot = slot;
         current = move;
         Elapsed = 0f;
         windowOpened = new bool[move.hitWindows.Length];
@@ -166,11 +168,11 @@ public class ActionPlayer : MonoBehaviour
     {
         UpdateWeights(Time.deltaTime);
 
-        if (finished || !slots[activeSlot].IsValid()) return;
+        if (finished || !Active.IsValid()) return;
 
         // HitStop arriva dalla Hitbox in FixedUpdate, quindi e' gia' noto qui
         bool frozen = HitStop.IsFrozen(gameObject);
-        slots[activeSlot].SetSpeed(frozen ? 0f : current.speed);
+        Active.SetSpeed(frozen ? 0f : current.speed);
     }
 
     // Dopo l'animazione: il tempo della clip e' quello appena valutato, cioe' la posa
@@ -178,9 +180,9 @@ public class ActionPlayer : MonoBehaviour
     // e ogni finestra si aprirebbe e chiuderebbe con un frame di ritardo.
     private void LateUpdate()
     {
-        if (finished || !slots[activeSlot].IsValid()) return;
+        if (finished || !Active.IsValid()) return;
 
-        Elapsed = (float)slots[activeSlot].GetTime() / Mathf.Max(current.speed, 0.0001f);
+        Elapsed = (float)Active.GetTime() / Mathf.Max(current.speed, 0.0001f);
         UpdateWindows();
 
         float duration = current.Duration;
@@ -199,15 +201,38 @@ public class ActionPlayer : MonoBehaviour
         outputWeight = Mathf.MoveTowards(outputWeight, targetOutput, step);
         output.SetWeight(outputWeight);
 
-        if (activeSlot >= 0)
+        for (int i = 0; i < inputs.Count; i++)
         {
-            slotWeights[activeSlot] = Mathf.MoveTowards(slotWeights[activeSlot], 1f, step);
-            slotWeights[1 - activeSlot] = Mathf.MoveTowards(slotWeights[1 - activeSlot], 0f, step);
-            mixer.SetInputWeight(0, slotWeights[0]);
-            mixer.SetInputWeight(1, slotWeights[1]);
+            if (!inputs[i].IsValid()) continue;
+            weights[i] = Mathf.MoveTowards(weights[i], i == activeInput ? 1f : 0f, step);
+            mixer.SetInputWeight(i, weights[i]);
+
+            // una mossa sostituita che non pesa piu' si toglie, ma il suo ingresso resta vuoto
+            if (i != activeInput && weights[i] <= 0f)
+            {
+                graph.Disconnect(mixer, i);
+                inputs[i].Destroy();
+            }
         }
 
-        if (outputWeight <= 0f) RestoreEvents();
+        if (outputWeight <= 0f)
+        {
+            RestoreEvents();
+            if (finished && inputs.Count > 0) ResetMixer();
+        }
+    }
+
+    private void ResetMixer()
+    {
+        foreach (var input in inputs)
+            if (input.IsValid()) input.Destroy();
+        inputs.Clear();
+        weights.Clear();
+        activeInput = -1;
+
+        mixer.Destroy();
+        mixer = AnimationMixerPlayable.Create(graph, 0);
+        output.SetSourcePlayable(mixer);
     }
 
     // Una finestra piu' corta di un frame si apre e si chiude nello stesso frame:
