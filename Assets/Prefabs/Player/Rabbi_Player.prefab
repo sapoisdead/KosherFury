@@ -649,8 +649,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47e62d31dbde548f1b8da2b153665422, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  walkSpeed: 2.8
-  sprintSpeed: 7
+  walkSpeed: 1.2
+  sprintSpeed: 5
+  lockMoveSpeed: 0.8
   attackAdvanceSpeed: 1.2
   attackAdvanceMinDistance: 0.9
   jumpHeight: 1.5
@@ -684,7 +685,9 @@ MonoBehaviour:
   inputBufferTime: 0.25
   parryMaxWindow: 0.5
   stanceBlendSpeed: 6
-  walkClipSpeed: 4.8
+  walkClipSpeed: 1.2
+  runClipSpeed: 5
+  guardClipSpeed: 4.8
   minLocomotionPlaybackRate: 0.35
   punchComboMultiplier:
   - 2
@@ -798,6 +801,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80a6a92b065d8408fa515e5f5740901a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ActionPlayer
+  speedMultiplier: 1
 --- !u!114 &7354037617075719235
 MonoBehaviour:
   m_ObjectHideFlags: 0

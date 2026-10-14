@@ -5,8 +5,12 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour, IActorMotor
 {
     [Header("Movement")]
-    [SerializeField] private float walkSpeed = 4.8f;
-    [SerializeField] private float sprintSpeed = 9.6f;
+    [Tooltip("Camminata libera, in m/s. La clip Walk e' animata a questa velocita'.")]
+    [SerializeField] private float walkSpeed = 1.2f;
+    [Tooltip("Corsa (sprint), in m/s. La clip Run e' animata a questa velocita'.")]
+    [SerializeField] private float sprintSpeed = 5f;
+    [Tooltip("Velocita' massima da agganciati (strafe), in m/s. Separata dalla camminata: gli strafe in guardia sono a passo accostato, piu' lenti.")]
+    [SerializeField] private float lockMoveSpeed = 0.8f;
     [Tooltip("Velocita' con cui il player si porta avanti DURANTE il proprio colpo, solo se agganciato. Serve a recuperare la spinta che il colpo precedente ha impresso al bersaglio: senza, dopo due o tre colpi il nemico e' fuori portata e la combo si spezza. Non e' movimento libero, punta solo al bersaglio e si ferma a attackAdvanceMinDistance.")]
     [SerializeField] private float attackAdvanceSpeed = 1.2f;
     [Tooltip("Distanza a cui l'avanzamento durante il colpo si ferma. Sotto la portata del player (1.05-1.10 m) e sopra il minimo fisico fra i due corpi (0.80 m).")]
@@ -128,9 +132,10 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     }
 
     // Quanto si va, dato il tetto di velocita' del contesto: libero si arriva alla
-    // corsa, agganciati ci si ferma alla camminata da combattimento, perche' girare
-    // attorno al nemico a stick pieno e' il gesto piu' comune del combattimento e
-    // farne partire la corsa sgancerebbe il lock ogni volta.
+    // corsa, agganciati ci si ferma a lockMoveSpeed, perche' girare attorno al nemico a
+    // stick pieno e' il gesto piu' comune del combattimento e farne partire la corsa
+    // sgancerebbe il lock ogni volta. Da tastiera, senza sprint, la velocita' e' la
+    // camminata, o il tetto del lock se e' piu' basso.
     private float MoveSpeed(float maxSpeed)
     {
         if (isSprinting) return sprintSpeed;
@@ -457,7 +462,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
             return;
         }
 
-        float speed = MoveSpeed(walkSpeed);
+        float speed = MoveSpeed(lockMoveSpeed);
 
         // Forward = verso il nemico, right = perpendicolare
         Vector3 forward = toEnemy.normalized;

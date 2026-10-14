@@ -18,8 +18,12 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private float parryMaxWindow = 0.8f;
     [Tooltip("Quanto velocemente si passa da postura pacifica a combat.")]
     [SerializeField] private float stanceBlendSpeed = 6f;
-    [Tooltip("Velocita' in m/s a cui e' tarata la clip di camminata: e' la SOGLIA DEL BLEND TREE (4.8), non la velocita' del player, che puo' essere diversa. Sotto questo valore la riproduzione rallenta in proporzione per non far slittare i piedi.")]
-    [SerializeField] private float walkClipSpeed = 4.8f;
+    [Tooltip("Velocita' nativa della clip di camminata libera (Walk), in m/s: quella a cui il piede a terra non scivola. Deve combaciare con la soglia della camminata nei blend tree Locomotion_Free / Locomotion_Free_Sword.")]
+    [SerializeField] private float walkClipSpeed = 1.2f;
+    [Tooltip("Velocita' nativa della clip di corsa (Run), in m/s. Deve combaciare con la soglia della corsa nei blend tree della locomozione libera. Sopra questa velocita' la clip accelera in proporzione, senza tetto.")]
+    [SerializeField] private float runClipSpeed = 5f;
+    [Tooltip("Velocita' nativa della locomozione agganciata (blend tree Locomotion, strafe), in m/s. Le clip vecchie sono tarate su 4.8; gli strafe nuovi (Sword_Guard_Walk_F/B/L/R) saranno a 0.8.")]
+    [SerializeField] private float guardClipSpeed = 4.8f;
     [Tooltip("Ritmo minimo di riproduzione della locomozione, sotto la velocita' di camminata. A zero il passo si congelerebbe alle andature lentissime: meglio un filo di scivolamento che un personaggio che avanza al rallentatore.")]
     [SerializeField] private float minLocomotionPlaybackRate = 0.35f;
 
@@ -42,6 +46,7 @@ public class PlayerAnimator : MonoBehaviour
     private static readonly int IsLockedHash = Animator.StringToHash("IsLocked");
     private static readonly int JumpHash = Animator.StringToHash("Jump");
     private static readonly int SpeedMultiplierHash = Animator.StringToHash("SpeedMultiplier");
+    private static readonly int GuardSpeedMultiplierHash = Animator.StringToHash("GuardSpeedMultiplier");
 
     // Layer "Weapon_Overlay": mascherato su busto/braccia, sovrascrive la posa a mani
     // nude con quella da spada. Indice 1 perche' e' il secondo layer del controller,
@@ -173,26 +178,32 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
-    // Con lo stick la velocita' e' continua, ma le clip di locomozione no: sotto la
-    // soglia di camminata il blend tree mescola idle e camminata e la clip continua a
-    // girare al proprio ritmo, quindi i piedi slittano. Rallentando la riproduzione in
-    // proporzione alla velocita' reale il passo torna attaccato a terra.
+    // Velocita' di riproduzione della locomozione libera = velocita' reale / velocita'
+    // nativa della clip, cosi' il piede a terra non scivola a nessuna andatura.
     //
-    // Sopra quella soglia il moltiplicatore resta 1: li' ci pensano gia' le soglie del
-    // blend tree, che sono in m/s veri, a tenere insieme passo e spostamento.
+    // Le soglie del blend tree (Walk a walkClipSpeed, Run a runClipSpeed) sono in m/s
+    // veri e uguali alle velocita' native: fra le due il blend mescola clip la cui
+    // velocita' nativa combacia gia' con quella reale, e il moltiplicatore resta 1.
+    // Fuori dall'intervallo il blend resta sulla clip estrema, quindi e' la riproduzione a
+    // dover seguire: sotto la camminata rallenta (fino a minLocomotionPlaybackRate, o il
+    // passo si congelerebbe), sopra la corsa accelera, senza tetto.
     //
-    // Il riferimento e' la soglia del blend tree, NON walkSpeed del player: sono due
-    // numeri diversi (4.8 contro 2.5 sul prefab) e usare il secondo terrebbe il passo
-    // a ritmo pieno proprio dove la clip sta gia' correndo piu' del personaggio.
-    //
-    // Il valore va sugli stati di locomozione (vedi il parametro SpeedMultiplier nel
-    // controller), non sull'Animator intero: moltiplicare tutto rallenterebbe anche
-    // pugni e parate.
+    // Il valore va sugli stati di locomozione (parametro SpeedMultiplier nel controller),
+    // non sull'Animator intero: moltiplicare tutto rallenterebbe anche colpi e parate.
     private float LocomotionPlaybackRate()
     {
-        if (walkClipSpeed <= 0f || currentSpeed >= walkClipSpeed) return 1f;
+        if (walkClipSpeed <= 0f || runClipSpeed <= 0f) return 1f;
+        if (currentSpeed < walkClipSpeed) return Mathf.Max(currentSpeed / walkClipSpeed, minLocomotionPlaybackRate);
+        if (currentSpeed > runClipSpeed) return currentSpeed / runClipSpeed;
+        return 1f;
+    }
 
-        return Mathf.Max(currentSpeed / walkClipSpeed, minLocomotionPlaybackRate);
+    // Lo stesso per la locomozione agganciata (parametro GuardSpeedMultiplier), che ha una
+    // sola velocita' nativa: col lock la velocita' massima e' quella degli strafe.
+    private float GuardPlaybackRate()
+    {
+        if (guardClipSpeed <= 0f) return 1f;
+        return Mathf.Max(currentSpeed / guardClipSpeed, minLocomotionPlaybackRate);
     }
 
     private void Update()
@@ -215,6 +226,7 @@ public class PlayerAnimator : MonoBehaviour
 
         animator.SetFloat(SpeedHash, currentSpeed);
         animator.SetFloat(SpeedMultiplierHash, LocomotionPlaybackRate());
+        animator.SetFloat(GuardSpeedMultiplierHash, GuardPlaybackRate());
 
         // Direzione di movimento RELATIVA a dove guarda il player. Serve sotto lock,
         // dove si resta rivolti al nemico e ci si sposta di lato o all'indietro: il
