@@ -5,11 +5,11 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour, IActorMotor
 {
     [Header("Movement")]
-    [Tooltip("Camminata libera, in m/s. La clip Walk e' animata a questa velocita'.")]
+    [Tooltip("Camminata libera, in m/s. Regolabile: la clip Walk (nativa 1.2 m/s) viene riprodotta a walkSpeed / 1.2, quindi i piedi non scivolano.")]
     [SerializeField] private float walkSpeed = 1.2f;
-    [Tooltip("Corsa (sprint), in m/s. La clip Run e' animata a questa velocita'.")]
+    [Tooltip("Corsa (sprint), in m/s. Regolabile: la clip Run (nativa 5.0 m/s) viene riprodotta a sprintSpeed / 5.0.")]
     [SerializeField] private float sprintSpeed = 5f;
-    [Tooltip("Velocita' massima da agganciati (strafe), in m/s. Separata dalla camminata: gli strafe in guardia sono a passo accostato, piu' lenti.")]
+    [Tooltip("Velocita' massima da agganciati (strafe), in m/s. Separata dalla camminata: gli strafe in guardia sono a passo accostato, piu' lenti. Regolabile: la clip viene riprodotta a velocita' / guardClipSpeed (PlayerAnimator).")]
     [SerializeField] private float lockMoveSpeed = 0.8f;
     [Tooltip("Velocita' con cui il player si porta avanti DURANTE il proprio colpo, solo se agganciato. Serve a recuperare la spinta che il colpo precedente ha impresso al bersaglio: senza, dopo due o tre colpi il nemico e' fuori portata e la combo si spezza. Non e' movimento libero, punta solo al bersaglio e si ferma a attackAdvanceMinDistance.")]
     [SerializeField] private float attackAdvanceSpeed = 1.2f;
@@ -614,9 +614,10 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     // Il lunge del CombatActor: passa dal CharacterController, cosi' rispetta le collisioni.
     public void MoveBy(Vector3 delta) => controller.Move(delta);
 
-    // Velocita' di camminata in sola lettura: e' anche il tetto a cui si fermano
-    // le andature analogiche quando si e' agganciati.
+    // Velocita' di gioco in sola lettura: PlayerAnimator ci mette le soglie del blend
+    // Walk/Run e ne ricava la velocita' di riproduzione delle clip.
     public float WalkSpeed => walkSpeed;
+    public float SprintSpeed => sprintSpeed;
 
     public float GetSpeed()
     {
