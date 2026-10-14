@@ -2,8 +2,18 @@
   "character": "Rabbi",
   "blend": "Rabbi_anim.blend",
   "fps": 60,
-  "exported_at": "2026-10-13T16:10:11",
+  "exported_at": "2026-10-14T09:50:07",
   "actions": {
+    "Dodge_F": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": false,
+      "markers": {
+        "iframe_start": 3,
+        "iframe_end": 14,
+        "cancel": 18
+      }
+    },
     "Sword_Guard_Idle": {
       "frame_start": 0,
       "frame_end": 72,

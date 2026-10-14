@@ -16,7 +16,7 @@ MonoBehaviour:
   heavy: {fileID: 0}
   parry: {fileID: 11400000, guid: 8a9da191770514dc1a0fbba9925ffc1a, type: 2}
   riposte: {fileID: 0}
-  dodgeForward: {fileID: 11400000, guid: 61fb87801ef4e4d558e8bf3acc8c0a3b, type: 2}
+  dodgeForward: {fileID: 11400000, guid: 98ecf25417d9649a0821076eeab44eda, type: 2}
   dodgeBack: {fileID: 11400000, guid: 2aa10b031c76d4590ac7545db3afaeab, type: 2}
   dodgeLeft: {fileID: 11400000, guid: 5e21ebefadfe940c6aa5766b3dcbb493, type: 2}
   dodgeRight: {fileID: 11400000, guid: b8a24a0c18d4944a8815f5878bb61c45, type: 2}
