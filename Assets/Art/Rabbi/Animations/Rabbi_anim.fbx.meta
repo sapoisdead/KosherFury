@@ -32,15 +32,20 @@ ModelImporter:
       lower retargeting quality:\nNote: Activate translation DOF on avatar to improve
       retargeting quality.\n\t'mixamorig:LeftFoot' has scale animation that will
       be discarded.\n\t'mixamorig:RightFoot' has scale animation that will be discarded.\n\nClip
-      'Armature|Sword_Guard_Walk_L' has import animation warnings that might lower
-      retargeting quality:\nNote: Activate translation DOF on avatar to improve retargeting
-      quality.\n\t'mixamorig:LeftFoot' has scale animation that will be discarded.\n\t'mixamorig:RightFoot'
-      has scale animation that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_R'
-      has import animation warnings that might lower retargeting quality:\nNote:
-      Activate translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot'
-      has scale animation that will be discarded.\n\t'mixamorig:RightFoot' has scale
-      animation that will be discarded.\n\nClip 'Armature|Sword_Light_1' has import
-      animation warnings that might lower retargeting quality:\nNote: Activate translation
+      'Armature|Sword_Arms_Run' has import animation warnings that might lower retargeting
+      quality:\nNote: Activate translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftLeg'
+      has scale animation that will be discarded.\n\t'mixamorig:LeftFoot' has scale
+      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
+      that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_L' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot' has scale
+      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
+      that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_R' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot' has scale
+      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
+      that will be discarded.\n\nClip 'Armature|Sword_Light_1' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
       DOF on avatar to improve retargeting quality.\n\t'mixamorig:RightFoot' has
       scale animation that will be discarded.\n\nClip 'Armature|Sword_Light_3' has
       import animation warnings that might lower retargeting quality:\nNote: Activate
@@ -205,6 +210,64 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
+      name: Sword_Arms_Run
+      takeName: Armature|Sword_Arms_Run
+      internalID: -7678433283562737925
+      firstFrame: 0
+      lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Sword_Arms_Walk
+      takeName: Armature|Sword_Arms_Walk
+      internalID: -557679869209307535
+      firstFrame: 0
+      lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: Sword_Guard_Idle
       takeName: Armature|Sword_Guard_Idle
       internalID: -981834861906458103
@@ -326,6 +389,35 @@ ModelImporter:
       internalID: -7286183704758733194
       firstFrame: 0
       lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Sword_Idle
+      takeName: Armature|Sword_Idle
+      internalID: 8324860437086164814
+      firstFrame: 0
+      lastFrame: 72
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

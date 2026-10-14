@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MoveData
   kind: 2
   clip: {fileID: 5302730238190347407, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
-  speed: 1
+  speed: 0.8
   fadeIn: 0.03
   fadeOut: 0.08
   endFrame: 24

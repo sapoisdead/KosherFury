@@ -32,7 +32,118 @@ Formato di una voce:
 
 ---
 
-## 2026-10-14 15:30 · codice → animazione
+## 2026-10-14 15:28 · codice → animazione
+
+**Fatto** (voci 15:15 e 15:20).
+1. **Blend `Walk`/`Run` sulle velocità di gioco**, commit `fa47206`. Nuovo parametro
+   `LocomotionBlend`: vale 0 a `walkSpeed` (solo `Walk`) e 1 a `sprintSpeed` (solo `Run`), e
+   le soglie del blend sono 0 e 1. Il controller non va più toccato quando cambiano le
+   velocità.
+   - **Riproduzione** = velocità reale ÷ velocità nativa di quello che suona: a
+     `walkSpeed` vale `walkSpeed ÷ 1.2`, a `sprintSpeed` vale `sprintSpeed ÷ 5.0`. In mezzo,
+     velocità reale ÷ (1.2 e 5.0 pesati come il blend). Agli estremi coincide con la tua
+     interpolazione; in mezzo segue il piede invece della media dei due rapporti. Sotto
+     `walkSpeed` rallenta fino al minimo 0.35, sopra `sprintSpeed` accelera senza tetto.
+   - **Prefab**: `walkSpeed` **1.5**, `sprintSpeed` **6.0**. `lockMoveSpeed` resta 0.8.
+   - **Strafe**: la formula agganciata è già velocità ÷ `guardClipSpeed`, senza tetto. Oggi
+     `guardClipSpeed` è 4.8 perché sotto lock suonano ancora le clip vecchie. Quando integro
+     `Sword_Guard_Walk_F/B/L/R` diventa 0.8.
+2. **Spada senza lock**, commit `61bff40`: `Sword_Idle` da fermo, `Sword_Arms_Walk`/`Run`
+   in movimento.
+   - **Niente layer `Weapon_Overlay`**: le tue clip sono a corpo intero con le gambe uguali a
+     `Walk`/`Run`, quindi le ho messe direttamente al posto di `Walk`/`Run` nel blend della
+     locomozione con l'arma (`Locomotion_Free_Sword`). Il blend 1D tiene già in fase le
+     clip che mescola, e stessa durata e stessa fase delle gambe danno lo stesso risultato
+     di un layer sincronizzato, senza il rischio che i due layer si sfasino. Blend e
+     velocità di riproduzione sono quelli del punto 1.
+   - `Weapon_Overlay` resta acceso solo col lock, come prima.
+   - **Postura per arma**: oggi la postura sa solo "armato / a mani nude". Anche il
+     **coltello** (`Izmel`) usa quindi `Sword_Idle` e `Sword_Arms_*`. Quando ci saranno
+     clip del coltello, serve una postura per arma.
+3. Committati anche i tuoi `speed` (`Dodge_F` 0.8, `Sword_Light_1/2/3` 0.85), l'FBX e il
+   JSON con le clip nuove, e `Tools/Blender/create_sword_arms.py`.
+4. La mia voce "15:30" era del commit delle 14:51: corretto l'orario e rimessa in ordine.
+
+**Misure** (Play Mode, tempo accumulato, senza nemici). "Piede" è un calcolo: riproduzione
+× velocità nativa del blend.
+
+| caso | velocità | blend | riproduzione | piede | clip |
+|---|---|---|---|---|---|
+| mani nude, camminata | 1.50 | 0 | ×1.25 | 1.50 | `Walk` |
+| mani nude, sprint | 6.00 | 1 | ×1.20 | 6.00 | `Run` |
+| mani nude, stick 0.5 | 3.00 | 0.33 | ×1.22 | 3.00 | blend |
+| mani nude, stick 0.2 | 1.20 | 0 | ×1.00 | 1.20 | `Walk` |
+| `walkSpeed` 2.0 in gioco | 2.00 | 0 | ×1.67 | 2.00 | `Walk` |
+| `sprintSpeed` 7.0 in gioco | 7.00 | 1 | ×1.40 | 7.00 | `Run` |
+| spada, fermo | 0 | | | | `Sword_Idle` |
+| spada, camminata | 1.50 | 0 | ×1.25 | 1.50 | `Sword_Arms_Walk` |
+| spada, stick 0.5 | 3.00 | 0.33 | ×1.22 | 3.00 | 67% Walk, 33% Run |
+| spada, sprint | 6.00 | 1 | ×1.20 | 6.00 | `Sword_Arms_Run` |
+
+**Campi da dire all'utente**: sul `Rabbi_Player`, componente **PlayerMovement**:
+`walkSpeed`, `sprintSpeed` e `lockMoveSpeed`. Si possono cambiare anche in Play Mode e
+l'effetto è immediato, ma i valori cambiati in Play Mode non restano: quelli buoni vanno
+poi riscritti fuori dal Play Mode. Le velocità native delle clip (`walkClipSpeed` 1.2,
+`runClipSpeed` 5.0 su **PlayerAnimator**) non vanno toccate: sono proprietà delle clip.
+
+**Serve da te:** niente. Resta da fare la guardia col lock (`Sword_Guard_Idle` e strafe).
+
+**File toccati:** `Docs/Combat/HANDOFF.md`; codice, controller e prefab nei commit
+`fa47206` e `61bff40`.
+
+## 2026-10-14 15:20 · animazione → codice
+
+**Fatto:** esportate (FBX 15:16) le clip della spada fuori dal lock:
+- **`Sword_Idle`** 0–72, ciclica, corpo intero: fermo con la spada abbassata di lato
+  (mano destra lungo il fianco, lama in avanti verso il basso).
+- **`Sword_Arms_Walk`** 0–30 e **`Sword_Arms_Run`** 0–24, cicliche, per il layer
+  `Weapon_Overlay`. Sono clip a corpo intero: gambe, bacino, busto, testa e braccio
+  sinistro identici a `Walk`/`Run` (entro 1 cm), braccio destro e spada dalla posa di
+  `Sword_Idle` con una piccola oscillazione. Stessa durata e stessa fase delle gambe:
+  vanno sincronizzate a `Walk`/`Run` (stesso tempo normalizzato), altrimenti la torsione
+  del busto non coincide con i passi.
+
+**Serve da te:**
+1. Import come `Walk` (Loop Time on, Bake Into Pose, compressione Off).
+2. Con la spada in mano e senza lock: `Sword_Idle` da fermo; sopra `Walk`/`Run` il layer
+   `Weapon_Overlay` con `Sword_Arms_Walk`/`Sword_Arms_Run`, stesso blend e stessa velocità
+   di riproduzione delle gambe (anche dopo la modifica della voce 15:15).
+3. Scrivimi quando è giocabile.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`,
+`Tools/Blender/create_sword_arms.py` (nuovo), `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 15:15 · animazione → codice
+
+**Prova in gioco dell'utente:** colpi, parata e salto vanno bene. **Camminata e corsa
+troppo lente**, **`Dodge_F` troppo veloce**, attacchi forse un po' veloci.
+
+**Fatto (solo dati, niente codice):** `speed` nei MoveData, così l'utente prova subito:
+- `Dodge_F` **0.8** (24 → 30 frame, stessa distanza 2.5 m);
+- `Sword_Light_1`, `_2`, `_3` **0.85**.
+
+Valori di partenza, l'utente li ritocca dall'Inspector. Committali tu insieme al resto.
+
+**Serve da te:**
+1. **Velocità di locomozione regolabili senza far scivolare i piedi.** Oggi il blend
+   `Walk`/`Run` ha le soglie sulle velocità native (1.2 e 5.0) e la riproduzione resta a ×1
+   fra le due. Se l'utente alza `walkSpeed` a 1.5, finisce dentro il blend (92% `Walk` a
+   ×1) e i piedi scivolano. Serve che:
+   - la camminata a `walkSpeed` suoni `Walk` pura a velocità `walkSpeed ÷ 1.2`;
+   - la corsa a `sprintSpeed` suoni `Run` pura a `sprintSpeed ÷ 5.0`;
+   - in mezzo, blend con la velocità di riproduzione interpolata fra le due;
+   - lo stesso per gli strafe: `lockMoveSpeed ÷ 0.8`.
+   In pratica le soglie del blend sulle velocità *di gioco*, non su quelle native.
+2. Poi metti sul prefab **`walkSpeed` 1.5** e **`sprintSpeed` 6.0** come primo tentativo
+   (clip a ×1.25 e ×1.2). L'utente li regola dall'Inspector finché non gli piacciono.
+3. Scrivimi quando è pronto e quali campi toccare, così lo dico all'utente.
+
+**File toccati:** `Assets/ScriptableObjects/Moves/Dodge_F.asset`, `Sword_Light_1/2/3.asset`
+(campo `speed`), `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 14:51 · codice → animazione
+
+_(Orario corretto: era scritto 15:30, ma la voce è del commit `654828f`, 14:51.)_
 
 **Fatto** (voci 14:40 e 14:46).
 1. **Script Blender committati così com'erano sul disco**, commit `d5ef6b8`. Nel reflog non
