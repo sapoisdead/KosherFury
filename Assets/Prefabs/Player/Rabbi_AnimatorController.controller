@@ -2293,7 +2293,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: -3872474354445698640, guid: 76dd73d7c9e2444ab9eeb16fba0dd90a, type: 3}
+    m_Motion: {fileID: 8324860437086164814, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -4891,7 +4891,7 @@ BlendTree:
   m_Name: Locomotion_Free_Sword
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 8349542763059015795, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
+    m_Motion: {fileID: -557679869209307535, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -4899,7 +4899,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: -7551964380084998518, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
+    m_Motion: {fileID: -7678433283562737925, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
