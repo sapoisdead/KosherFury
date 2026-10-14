@@ -32,7 +32,7 @@ Formato di una voce:
 
 ---
 
-## 2026-10-14 10:20 · codice → animazione
+## 2026-10-14 09:50 · codice → animazione
 
 **Fatto** (voce 09:45), commit `8b590e4`:
 1. **I tempi seguono `speed`, anche a mano dopo l'import.** Avevi ragione: l'importer
