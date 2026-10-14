@@ -16,7 +16,8 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 
-VERSION = 3   # v3: perni della rullata presi dalla scarpa. v2: camminata vera (v1 era una corsetta a 2.4 m/s, scartata)
+VERSION = 4   # v4: più molleggiata, busto/testa/braccia sfasati. v3: perni della rullata dalla scarpa.
+              # v2: camminata vera (v1 era una corsetta a 2.4 m/s, scartata)
 ACTION = "Walk"
 GUARD_ACTION = "Sword_Guard_Idle"
 P = "mixamorig:"
@@ -31,7 +32,9 @@ HIPS_DOWN = 0.04
 LEAN_DEG = 3
 ARM_FROM_VERTICAL = 8
 ELBOW_DEG = 25
-ARM_DELAY = 2
+DELAYS = {"Spine2": 1, "Head": 3,                          # ritardi in frame: il busto segue il
+          "RightArm": 4, "LeftArm": 4,                     # bacino, le braccia il busto, gli
+          "RightForeArm": 6, "LeftForeArm": 6}             # avambracci le braccia
 
 # Rullata del piede durante l'appoggio: frame -> (gradi, perno). Gradi positivi = punta su.
 #   "heel": ruota sul tallone (appoggio), "ball": ruota sulla punta della scarpa (stacco).
@@ -43,17 +46,20 @@ SWING = {21: (-0.12, 0.06, -15), 24: (0.02, 0.065, -2), 27: (0.15, 0.035, 12)}
 
 # Bacino per frame del ciclo: (lato verso il piede sinistro, su). Più alto a metà appoggio,
 # spostato sopra il piede che regge il peso.
-HIPS = {0: (0.0, -0.010), 8: (0.015, 0.008), 15: (0.0, -0.010), 23: (-0.015, 0.008)}
+# Molleggio: all'appoggio il peso carica e il bacino scende ancora (frame 3), poi risale
+# sopra il piede.
+HIPS = {0: (0.0, -0.015), 3: (0.005, -0.030), 8: (0.015, 0.012), 12: (0.008, 0.004),
+        15: (0.0, -0.015), 18: (-0.005, -0.030), 23: (-0.015, 0.012), 27: (-0.008, 0.004)}
 # Rotazioni (gradi) a frame 0 (sinistro davanti) e 15 (destro davanti).
 #   yaw: positivo = il fianco SINISTRO va avanti; swing: positivo = l'arto va AVANTI
 TWIST = {
     "Hips":         ("yaw",   4, -4),
-    "Spine2":       ("yaw",  -7,  7),
+    "Spine2":       ("yaw",  -8,  8),
     "Head":         ("yaw",   3, -3),
-    "RightArm":     ("swing", 18, -12),
-    "RightForeArm": ("swing",  6, -6),
-    "LeftArm":      ("swing", -12, 18),
-    "LeftForeArm":  ("swing", -6,  6),
+    "RightArm":     ("swing", 22, -15),
+    "RightForeArm": ("swing",  9, -9),
+    "LeftArm":      ("swing", -15, 22),
+    "LeftForeArm":  ("swing", -9,  9),
 }
 ARM_BONES = ("RightArm", "RightForeArm", "LeftArm", "LeftForeArm")
 
@@ -281,6 +287,19 @@ def pose_for(arm, ax, fingers, entries):
 
 def main():
     arm = find_armature()
+    if arm.animation_data is None:
+        arm.animation_data_create()
+    # Le tracce NLA attive sovrascriverebbero la posa calcolata: spente durante il lavoro.
+    nla = arm.animation_data.use_nla
+    arm.animation_data.use_nla = False
+    try:
+        build_action()
+    finally:
+        arm.animation_data.use_nla = nla
+
+
+def build_action():
+    arm = find_armature()
     if bpy.context.object and bpy.context.object.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")
     for name in ("IK_Foot.L", "IK_Foot.R"):
@@ -331,11 +350,13 @@ def main():
                     k.interpolation = "LINEAR"
 
     for fc in curves:
-        if bone_of(fc) in tuple(P + b for b in ARM_BONES):
+        b = bone_of(fc)
+        d = DELAYS.get(b[len(P):] if b and b.startswith(P) else None, 0)
+        if d:
             for k in fc.keyframe_points:
-                k.co.x += ARM_DELAY
-                k.handle_left.x += ARM_DELAY
-                k.handle_right.x += ARM_DELAY
+                k.co.x += d
+                k.handle_left.x += d
+                k.handle_right.x += d
             fc.update()
 
     for fc in curves:

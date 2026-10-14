@@ -16,7 +16,8 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 
-VERSION = 2   # v2: direzioni dalla posa di riposo, rotazioni azzerate prima di iniziare
+VERSION = 3   # v3: torsione di spalle più ampia (busto in due ossa), braccia più larghe, busto in ritardo.
+              # v2: direzioni dalla posa di riposo, rotazioni azzerate prima di iniziare
 ACTION = "Run"
 PERIOD = 24
 GUARD_ACTION = "Sword_Guard_Idle"
@@ -34,11 +35,12 @@ TABLE = {
     0: {
         "IK_Foot.L": [("move", 0.165, 0.00)],
         "IK_Foot.R": [("move", -0.05, 0.25)],
-        "Hips": [("move", 0.0, -0.05), ("yaw", 8)],
-        "Spine2": [("yaw", -15)],
-        "Head": [("yaw", 7)],
-        "RightArm": [("swing", 35)], "RightForeArm": [("swing", 10)],
-        "LeftArm": [("swing", -25)], "LeftForeArm": [("swing", -15)],
+        "Hips": [("move", 0.0, -0.05), ("yaw", 10)],
+        "Spine1": [("yaw", -8)],
+        "Spine2": [("yaw", -22)],
+        "Head": [("yaw", 20)],
+        "RightArm": [("swing", 42)], "RightForeArm": [("swing", 12)],
+        "LeftArm": [("swing", -30)], "LeftForeArm": [("swing", -18)],
     },
     2: {
         "IK_Foot.L": [("move", -0.165, 0.00)],
@@ -54,11 +56,12 @@ TABLE = {
     6: {
         "IK_Foot.L": [("move", -0.083, 0.08)],
         "IK_Foot.R": [("move", 0.12, -0.06)],
-        "Hips": [("yaw", -8)],
-        "Spine2": [("yaw", 15)],
-        "Head": [("yaw", -7)],
-        "RightArm": [("swing", -35)], "RightForeArm": [("swing", -10)],
-        "LeftArm": [("swing", 25)], "LeftForeArm": [("swing", 15)],
+        "Hips": [("yaw", -10)],
+        "Spine1": [("yaw", 8)],
+        "Spine2": [("yaw", 22)],
+        "Head": [("yaw", -20)],
+        "RightArm": [("swing", -42)], "RightForeArm": [("swing", -12)],
+        "LeftArm": [("swing", 30)], "LeftForeArm": [("swing", 18)],
     },
     9: {
         "IK_Foot.L": [("move", 0.05, 0.14)],
@@ -68,11 +71,12 @@ TABLE = {
     12: {
         "IK_Foot.L": [("move", 0.15, 0.03)],
         "IK_Foot.R": [("move", -0.075, -0.06)],
-        "Hips": [("move", 0.0, -0.015), ("yaw", -8)],
-        "Spine2": [("yaw", 15)],
-        "Head": [("yaw", -7)],
-        "RightArm": [("swing", -25)], "RightForeArm": [("swing", -15)],
-        "LeftArm": [("swing", 35)], "LeftForeArm": [("swing", 10)],
+        "Hips": [("move", 0.0, -0.015), ("yaw", -10)],
+        "Spine1": [("yaw", 8)],
+        "Spine2": [("yaw", 22)],
+        "Head": [("yaw", -20)],
+        "RightArm": [("swing", -30)], "RightForeArm": [("swing", -18)],
+        "LeftArm": [("swing", 42)], "LeftForeArm": [("swing", 12)],
     },
     14: {
         "IK_Foot.R": [("move", -0.165, 0.00)],
@@ -88,11 +92,12 @@ TABLE = {
     18: {
         "IK_Foot.L": [("move", 0.12, -0.06)],
         "IK_Foot.R": [("move", -0.083, 0.08)],
-        "Hips": [("yaw", 8)],
-        "Spine2": [("yaw", -15)],
-        "Head": [("yaw", 7)],
-        "RightArm": [("swing", 25)], "RightForeArm": [("swing", 15)],
-        "LeftArm": [("swing", -35)], "LeftForeArm": [("swing", -10)],
+        "Hips": [("yaw", 10)],
+        "Spine1": [("yaw", -8)],
+        "Spine2": [("yaw", -22)],
+        "Head": [("yaw", 20)],
+        "RightArm": [("swing", 30)], "RightForeArm": [("swing", 18)],
+        "LeftArm": [("swing", -42)], "LeftForeArm": [("swing", -12)],
     },
     21: {
         "IK_Foot.L": [("move", 0.02, -0.08)],
@@ -104,7 +109,8 @@ TABLE = {
 LEAN_DEG = 12            # busto in avanti, diviso fra Spine e Spine1
 ARM_FROM_VERTICAL = 15   # braccia vicino ai fianchi
 ELBOW_DEG = 90           # gomiti piegati
-ARM_DELAY = 2            # ritardo delle braccia, in frame
+DELAYS = {"Spine1": 1, "Spine2": 1, "Head": 2,          # ritardi in frame: il busto segue il bacino,
+          "RightArm": 2, "LeftArm": 2, "RightForeArm": 3, "LeftForeArm": 3}   # le braccia il busto
 LINEAR_KEYS = {"IK_Foot.L": (0, 2), "IK_Foot.R": (12, 14)}   # tratto a terra
 ARM_BONES = ("RightArm", "RightForeArm", "LeftArm", "LeftForeArm")
 
@@ -249,6 +255,19 @@ def base_pose(arm, ax, fingers):
 
 def main():
     arm = find_armature()
+    if arm.animation_data is None:
+        arm.animation_data_create()
+    # Le tracce NLA attive sovrascriverebbero la posa calcolata: spente durante il lavoro.
+    nla = arm.animation_data.use_nla
+    arm.animation_data.use_nla = False
+    try:
+        build_action()
+    finally:
+        arm.animation_data.use_nla = nla
+
+
+def build_action():
+    arm = find_armature()
     if bpy.context.object and bpy.context.object.mode != "OBJECT":
         bpy.ops.object.mode_set(mode="OBJECT")
     for name in ("IK_Foot.L", "IK_Foot.R"):
@@ -311,11 +330,13 @@ def main():
 
     # Braccia in ritardo.
     for fc in curves:
-        if bone_of(fc) in tuple(P + b for b in ARM_BONES):
+        b = bone_of(fc)
+        d = DELAYS.get(b[len(P):] if b and b.startswith(P) else None, 0)
+        if d:
             for k in fc.keyframe_points:
-                k.co.x += ARM_DELAY
-                k.handle_left.x += ARM_DELAY
-                k.handle_right.x += ARM_DELAY
+                k.co.x += d
+                k.handle_left.x += d
+                k.handle_right.x += d
             fc.update()
 
     # Loop: chiave di chiusura un periodo dopo la prima chiave, e Cycles.
