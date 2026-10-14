@@ -18,7 +18,7 @@ UNITY_PROJECT = os.path.expanduser("~/Desktop/Unity/KosherFury")
 EXPECTED_FPS = 60
 
 KNOWN_MARKERS = re.compile(
-    r"^(hit\d*_(start|end)|combo|cancel|parry_(start|end)|iframe_(start|end))$"
+    r"^(hit\d*_(start|end)|combo|cancel|parry_(start|end)|iframe_(start|end)|liftoff)$"
 )
 NAME_RULE = re.compile(r"^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$")
 
@@ -39,6 +39,8 @@ def required_markers(name):
         return ["parry_start", "parry_end"]
     if name.startswith("Dodge"):
         return ["iframe_start", "iframe_end"]
+    if name == "Jump_Start":
+        return ["liftoff"]
     if any(k in name for k in ("_Light", "_Heavy", "_Riposte")):
         return ["hit_start", "hit_end"]
     return []

@@ -16,7 +16,7 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 
-VERSION = 3   # v3: perni della rullata presi dalla scarpa. v2: v2: camminata vera (v1 era una corsetta a 2.4 m/s, scartata)
+VERSION = 3   # v3: perni della rullata presi dalla scarpa. v2: camminata vera (v1 era una corsetta a 2.4 m/s, scartata)
 ACTION = "Walk"
 GUARD_ACTION = "Sword_Guard_Idle"
 P = "mixamorig:"

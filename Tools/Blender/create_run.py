@@ -16,6 +16,7 @@ import bpy
 import math
 from mathutils import Matrix, Vector
 
+VERSION = 2   # v2: direzioni dalla posa di riposo, rotazioni azzerate prima di iniziare
 ACTION = "Run"
 PERIOD = 24
 GUARD_ACTION = "Sword_Guard_Idle"
@@ -340,7 +341,7 @@ def main():
     scene.frame_set(0)
 
     report = [
-        f"Creata '{ACTION}': {PERIOD} frame, ciclica, Fake User attivo",
+        f"[v{VERSION}] Creata '{ACTION}': {PERIOD} frame, ciclica, Fake User attivo",
         f"Avanti del Rabbi: {tuple(round(c, 2) for c in ax['fwd'])}",
         "Dita copiate da " + (GUARD_ACTION if fingers else "nessuna action (posa di riposo)"),
         "Controlla al frame 0: avanti piede SINISTRO e braccio DESTRO",
@@ -351,7 +352,7 @@ def main():
     if not bpy.app.background:
         bpy.context.window_manager.popup_menu(
             lambda self, ctx: [self.layout.label(text=x) for x in report],
-            title="Corsa creata", icon="CHECKMARK")
+            title=f"Corsa creata (script v{VERSION})", icon="CHECKMARK")
 
 
 main()

@@ -75,7 +75,12 @@ def create_control_bones(arm):
         knee = eb[f"{PREFIX}{side}Leg"]
 
         ik = eb.new(f"IK_Foot.{s}")
-        ik.head, ik.tail, ik.roll = foot.head.copy(), foot.tail.copy(), foot.roll
+        # Stessa direzione e roll del piede (serve alla Copy Rotation), ma più lungo
+        # per poterlo cliccare sopra l'osso del piede.
+        ik.head = foot.head.copy()
+        ik.tail = foot.head + (foot.tail - foot.head) * 1.8
+        ik.roll = foot.roll
+        ik.color.palette = "THEME01"
         ik.parent = None
         ik.use_deform = False
         coll.assign(ik)
@@ -85,6 +90,7 @@ def create_control_bones(arm):
         pole.tail = pole.head + up * (pole_dist * 0.2)
         pole.parent = None
         pole.use_deform = False
+        pole.color.palette = "THEME04"
         coll.assign(pole)
 
     # Tutte le ossa Mixamo devono restare deform, o "Only Deform Bones" le scarterebbe.

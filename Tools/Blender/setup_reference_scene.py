@@ -11,7 +11,8 @@ import math
 from mathutils import Vector
 
 # --- Misure dal progetto Unity (verificate o misurate, vedi Docs/Combat/HANDOFF.md) ---
-TARGET_DISTANCE = 1.05     # distanza fra i centri a cui i colpi di oggi entrano (da rimisurare)
+TARGET_DISTANCE = 1.40     # bersaglio per la spada: Slash di oggi entra a 1.43 m fra i centri (misura 12:38)
+FISTS_REACH = 1.10         # portata dei pugni di oggi: 1.05-1.29 m fra i centri (misura 12:38)
 CAPSULE_RADIUS = 0.40      # raggio del CharacterController / capsula del nemico
 CAPSULE_HEIGHT = 1.80      # altezza del CharacterController del Rabbi
 MIN_DISTANCE = 0.80        # distanza minima fra due corpi (0.40 + 0.40)
@@ -147,8 +148,9 @@ def main():
 
     target(col, fwd)
     ring("Ring_MinDistance_0.80", MIN_DISTANCE, col, (1.0, 0.25, 0.2, 1))
-    ring("Ring_Reach_1.05", TARGET_DISTANCE, col, (1.0, 0.8, 0.1, 1))
-    ring("Ring_TargetFace_0.65", TARGET_DISTANCE - CAPSULE_RADIUS, col, (0.3, 0.8, 1.0, 1))
+    ring(f"Ring_Reach_Sword_{TARGET_DISTANCE:.2f}", TARGET_DISTANCE, col, (1.0, 0.8, 0.1, 1))
+    ring(f"Ring_Reach_Fists_{FISTS_REACH:.2f}", FISTS_REACH, col, (0.7, 0.4, 1.0, 1))
+    ring(f"Ring_TargetFace_{TARGET_DISTANCE - CAPSULE_RADIUS:.2f}", TARGET_DISTANCE - CAPSULE_RADIUS, col, (0.3, 0.8, 1.0, 1))
     free_cam = game_camera(col, fwd, "CAM_Game", 0.0)
     game_camera(col, fwd, "CAM_Game_Lock", CAM_SHOULDER)
     bpy.context.scene.camera = free_cam
