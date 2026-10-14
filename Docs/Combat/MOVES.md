@@ -25,7 +25,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
    guardia `Sword_Guard_Walk_F/B/L/R`; in comune a tutte le armi `Walk`, `Run`,
    `Jump_Start` / `Jump_Air` / `Jump_Land`; per la spada `Sword_Idle`,
    `Sword_Arms_Walk`, `Sword_Arms_Run`.
-3. Resto della spada: `Sword_Riposte`, `Sword_Heavy`, `Dodge_B/L/R`.
+3. Resto della spada: `Sword_Riposte`, catena pesante `Sword_Heavy_1/2/3`, `Dodge_B/L/R`.
 4. Reazioni: `Hit_Light_F/B`, `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`.
 5. Pugni, poi coltello, poi i nemici.
 
@@ -39,6 +39,30 @@ lenta, si può alzare fino a ~1.4 m/s e la clip accelera in proporzione. Strafe 
 `Sword_Guard_Walk_F/B/L/R`: **0.8 m/s**, passo accostato (prima il piede dal lato in cui si
 va), ciclo di 24 frame, passo 0.32 m per piede, busto e braccia della guardia. Generatori di base:
 `Tools/Blender/create_run.py`, `create_walk.py`.
+
+**Ritiming del 14 ottobre (15:57), fatto dall'utente con la regola dei tempi:** valgono questi
+valori, al posto delle tabelle di specifica più sotto.
+
+| Mossa | Totale | Attivi | `combo` | `cancel` | Altro |
+|---|---|---|---|---|---|
+| `Sword_Light_1` | 60 | 27–31 | 35 | 45 | |
+| `Sword_Light_2` | 50 | 20–26 | 32 | 36 | |
+| `Sword_Light_3` | 60 | 22–28 | — | 40 | |
+| `Sword_Parry` | 30 | — | — | — | finestra 7–19 |
+| `Sword_Riposte` | 48 | 24–26 | — | 44 | parte dal frame 13 della parata |
+| `Dodge_F` | 24 | — | — | 18 | invulnerabile 3–14 (invariata) |
+
+Raccordi verificati sull'FBX: `combo` di Light_1 = frame 0 di Light_2, `combo` di Light_2 =
+frame 0 di Light_3, inizio e fine di ogni mossa = guardia (scarti ≤ 6 mm).
+
+**Regola dei tempi** (14 ottobre, dopo `Sword_Riposte` ritmata dall'utente): i colpi devono
+avere peso. I tempi di partenza della sessione animazione si sono rivelati sempre troppo
+corti, quindi d'ora in poi si parte da questo schema e non dai valori di `PLAN.md`:
+- **carica lunga e leggibile**, con una posa di carica **tenuta** (anche 10–15 frame);
+- **scatto breve** (4–6 frame) fino all'impatto;
+- **impatto tenuto**: il colpo resta disteso 10–12 frame prima di rientrare;
+- **ritorno lento** in guardia.
+Riferimento: `Sword_Riposte`, colpo al frame 24 su 48.
 
 **Nota sui tempi:** dopo la prova di `Sword_Light_1` i tempi di specifica delle altre
 mosse (37–50 frame) vanno rivisti con lo stesso criterio prima di animarle.
@@ -261,7 +285,55 @@ Integrata il 13 ottobre alle 16:53 come parata della spada. Tempi dall'importer:
 subito. Collaudo col Parry Trainer: 4 parate su 4 contro colpi veri, il simp resta stordito;
 recupero a vuoto misurato 19.5 frame.
 
+Ritiming del 14 ottobre (16:40): finestra 7–19 dall'importer. Misura col Parry Trainer, tre
+colpi del simp: parata riuscita premendo fra **0.283 e 0.100 s prima** che il colpo diventi
+attivo (calcolo 19/60–7/60 = 0.317–0.117 s, scarto di un frame). Prima era fra 0.233 e 0.033.
+Contro `Punch_right`, attivo 0.433 s dopo l'inizio, vuol dire premere fra 0.15 e 0.33 s dopo
+che il simp parte.
+
 ---
+
+## Sword_Riposte
+
+**Stato:** esportata (14 ottobre, 15:40), tempi decisi dall'utente.
+
+### Specifica
+| Carica | Scatto | Attivi | Tenuta | Recupero | `cancel` | Totale |
+|---|---|---|---|---|---|---|
+| 0–19 (tenuta 5–19) | 19–24 | 24–26 | 26–38 | 38–48 | 44 | 48 |
+
+- Affondo dritto, dopo una parata riuscita. Parte dalla posa del frame 8 di `Sword_Parry`
+  (scarto 0) e finisce nella guardia (scarto 6 mm).
+- La punta resta dentro il bersaglio di riferimento dal 24 al ~40, all'altezza del bacino
+  del nemico.
+- Impatto proposto: hit stop forte (0.10 s), shake 0.4, knockback 1.5, reazione Heavy.
+
+### Integrazione
+Integrata il 14 ottobre alle 16:40 come `riposte` di `Moveset_Sword`: un attacco leggero dopo
+una parata riuscita parte da qui, sempre dal frame 0, con la fusione d'ingresso del MoveData
+(0.05 s) dalla posa della parata in quel momento, a qualunque frame sia. Nessun frame fisso
+della parata da aggiornare. Impatto come proposto (hit stop 0.10, shake 0.4, knockback 1.5,
+Heavy); danno ×2 come `Sword_Light_1`, ma dopo una parata il simp è stordito e il colpo è
+un'esecuzione, che uccide qualunque sia il danno. Misure: colpo a segno al frame 24–25 a 0.9,
+1.2, 1.4, 1.5 e 1.6 m, sia a velocità 1.0 sia a 0.85 (la finestra di 2 frame non perde
+colpi); dopo una parata il colpo arriva 0.369 s dopo il comando.
+
+## Sword_Heavy_1 / _2 / _3
+
+**Stato:** da animare. Decisione dell'utente (14 ottobre): il pesante è una **catena di tre
+colpi** a due mani, non un colpo singolo. Ci si può fermare dopo il secondo.
+
+| Colpo | Movimento | Totale | Attivi | `combo` | `cancel` |
+|---|---|---|---|---|---|
+| `Sword_Heavy_1` | fendente verticale dall'alto | ~72 | ~36–41 | ~46 | ~58 |
+| `Sword_Heavy_2` | spazzata orizzontale da destra a sinistra, vita | ~66 | ~26–31 | ~38 | ~50 |
+| `Sword_Heavy_3` | finale: raccolta, piccolo salto, schianto a terra | ~96 | ~40–45 | — | ~76 |
+
+- Ritmo della regola dei tempi: carica tenuta, scatto, impatto tenuto, ritorno lento.
+- Posa al `combo` = frame 0 del colpo successivo; tutti partono e finiscono in guardia.
+- Portata: il bersaglio a 1.40 m, come i leggeri.
+- Impatto proposto: 1 e 2 hit stop 0.10 s, knockback 1.5, Heavy; 3 hit stop 0.14 s,
+  shake forte, **Knockdown**.
 
 ## Dodge_F
 
@@ -281,3 +353,6 @@ che strisciano fra i frame 18 e 24.
 Integrata il 14 ottobre alle 10:10 come schivata in avanti per tutte le armi, root motion
 senza scala. In gioco: 2.518 m, invulnerabile dal frame 3 al 13, rinculo finale 4.6 cm (8.8
 cm nella clip, ridotto dal crossfade d'uscita). A ×0.7: stessa distanza in 35 frame.
+
+Ritiming del 14 ottobre (16:19): 50 frame, misura in gioco 0.833 s, 2.553 m, invulnerabile
+0.017–0.650 s (frame 1–39, come da marker).

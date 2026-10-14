@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MoveData
   kind: 0
   clip: {fileID: 1343954476253186574, guid: 7ac80d93414124f54bc2bdfca8c6c07f, type: 3}
-  speed: 0.85
+  speed: 1
   fadeIn: 0.05
   fadeOut: 0.1
-  endFrame: 54
+  endFrame: 60
   hitWindows:
   - slot: 4
-    startFrame: 18
-    endFrame: 24
-  comboFrame: 28
-  cancelFrame: 34
+    startFrame: 27
+    endFrame: 31
+  comboFrame: 35
+  cancelFrame: 45
   parryStartFrame: -1
   parryEndFrame: -1
   whiffRecoveryFrames: 0

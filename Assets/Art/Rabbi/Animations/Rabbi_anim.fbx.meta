@@ -19,12 +19,11 @@ ModelImporter:
     animationImportErrors: 
     animationImportWarnings: "\nClip 'Armature|Dodge_F' has import animation warnings
       that might lower retargeting quality:\nNote: Activate translation DOF on avatar
-      to improve retargeting quality.\n\t'mixamorig:LeftLeg' has scale animation
-      that will be discarded.\n\t'mixamorig:LeftFoot' has scale animation that will
-      be discarded.\n\t'mixamorig:RightLeg' has scale animation that will be discarded.\n\t'mixamorig:RightFoot'
-      has scale animation that will be discarded.\n\nClip 'Armature|Jump_Start' has
-      import animation warnings that might lower retargeting quality:\nNote: Activate
-      translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftLeg'
+      to improve retargeting quality.\n\t'mixamorig:LeftFoot' has scale animation
+      that will be discarded.\n\t'mixamorig:RightLeg' has scale animation that will
+      be discarded.\n\t'mixamorig:RightFoot' has scale animation that will be discarded.\n\nClip
+      'Armature|Jump_Start' has import animation warnings that might lower retargeting
+      quality:\nNote: Activate translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftLeg'
       has scale animation that will be discarded.\n\t'mixamorig:LeftFoot' has scale
       animation that will be discarded.\n\t'mixamorig:RightLeg' has scale animation
       that will be discarded.\n\t'mixamorig:RightFoot' has scale animation that will
@@ -33,24 +32,29 @@ ModelImporter:
       retargeting quality.\n\t'mixamorig:LeftFoot' has scale animation that will
       be discarded.\n\t'mixamorig:RightFoot' has scale animation that will be discarded.\n\nClip
       'Armature|Sword_Arms_Run' has import animation warnings that might lower retargeting
-      quality:\nNote: Activate translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftLeg'
-      has scale animation that will be discarded.\n\t'mixamorig:LeftFoot' has scale
-      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
-      that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_L' has import animation
-      warnings that might lower retargeting quality:\nNote: Activate translation
-      DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot' has scale
-      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
-      that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_R' has import animation
-      warnings that might lower retargeting quality:\nNote: Activate translation
-      DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot' has scale
-      animation that will be discarded.\n\t'mixamorig:RightFoot' has scale animation
-      that will be discarded.\n\nClip 'Armature|Sword_Light_1' has import animation
-      warnings that might lower retargeting quality:\nNote: Activate translation
+      quality:\nNote: Activate translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot'
+      has scale animation that will be discarded.\n\t'mixamorig:RightFoot' has scale
+      animation that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_L' has
+      import animation warnings that might lower retargeting quality:\nNote: Activate
+      translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot'
+      has scale animation that will be discarded.\n\t'mixamorig:RightFoot' has scale
+      animation that will be discarded.\n\nClip 'Armature|Sword_Guard_Walk_R' has
+      import animation warnings that might lower retargeting quality:\nNote: Activate
+      translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftFoot'
+      has scale animation that will be discarded.\n\t'mixamorig:RightFoot' has scale
+      animation that will be discarded.\n\nClip 'Armature|Sword_Light_1' has import
+      animation warnings that might lower retargeting quality:\nNote: Activate translation
       DOF on avatar to improve retargeting quality.\n\t'mixamorig:RightFoot' has
       scale animation that will be discarded.\n\nClip 'Armature|Sword_Light_3' has
       import animation warnings that might lower retargeting quality:\nNote: Activate
       translation DOF on avatar to improve retargeting quality.\n\t'mixamorig:RightLeg'
       has scale animation that will be discarded.\n\t'mixamorig:RightFoot' has scale
+      animation that will be discarded.\n\nClip 'Armature|Sword_Riposte' has import
+      animation warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'mixamorig:LeftShoulder' has
+      translation animation that will be discarded.\n\t'mixamorig:RightShoulder'
+      has translation animation that will be discarded.\n\t'mixamorig:LeftUpLeg'
+      has scale animation that will be discarded.\n\t'mixamorig:LeftFoot' has scale
       animation that will be discarded.\n"
     animationRetargetingWarnings: 
     animationDoRetargetingWarnings: 0
@@ -69,7 +73,7 @@ ModelImporter:
       takeName: Armature|Dodge_F
       internalID: 5302730238190347407
       firstFrame: 0
-      lastFrame: 24
+      lastFrame: 50
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -446,7 +450,7 @@ ModelImporter:
       takeName: Armature|Sword_Light_1
       internalID: 1343954476253186574
       firstFrame: 0
-      lastFrame: 54
+      lastFrame: 60
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -534,6 +538,35 @@ ModelImporter:
       internalID: 7304941487888677421
       firstFrame: 0
       lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Sword_Riposte
+      takeName: Armature|Sword_Riposte
+      internalID: -235271255282676642
+      firstFrame: 0
+      lastFrame: 48
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

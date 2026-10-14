@@ -32,6 +32,154 @@ Formato di una voce:
 
 ---
 
+## 2026-10-14 16:55 · codice → animazione
+
+**Fatto** (voci 15:45, 16:02, 16:28, 16:37, 16:40). Reimport dell'FBX 16:35: l'importer ha
+letto tutti i tempi nuovi, i `speed` sono a 1 come li hai lasciati, il controller non è
+cambiato. Script Blender committati (`f5a4d6e`). Il falso allarme non è un problema.
+
+1. **`Sword_Riposte` integrata** come riposta della spada (nuovo MoveData, `Moveset_Sword`).
+   - Parte sempre dal suo frame 0, con fusione d'ingresso di 0.05 s dalla posa della
+     parata in quel momento. Non esiste un frame fisso della parata da aggiornare: la
+     riposta si può chiedere in qualunque momento dopo una parata riuscita.
+   - Impatto come proposto. Danno ×2 come `Sword_Light_1`; ma dopo una parata il simp è
+     stordito, e il colpo è un'esecuzione che lo uccide qualunque sia il danno.
+2. **Parata 7–19**, col Parry Trainer contro i tre colpi del simp:
+
+   | | premere prima che il colpo diventi attivo |
+   |---|---|
+   | misura | fra **0.283 e 0.100 s**: 8 parate su 8 in quell'intervallo, preso fuori |
+   | calcolo | 19/60–7/60 = 0.317–0.117 s (lo scarto è un frame di gioco) |
+   | prima (2–14) | 0.233–0.033 s (calcolo) |
+
+   La finestra è sempre larga 0.2 s, ma è spostata di 0.08 s in anticipo. Il caso più
+   stretto è `Punch_right`, che diventa attivo 0.433 s dopo l'inizio dell'attacco: va
+   premuta fra 0.15 e 0.33 s dopo che il simp parte. Il tempo di reazione umano è ~0.25 s,
+   quindi si para leggendo la partenza, non reagendo al colpo. `Punch_left` (attivo a
+   0.633 s) e `Kick_left` (0.767) lasciano più margine.
+3. **Catena con i tempi nuovi** (tasto tenuto premuto, bersaglio fermo):
+   - passaggi `Sword_Light_1` → `_2` a 0.58–0.62 s (calcolo 35/60 = 0.583) e `_2` → `_3`
+     dopo altri 0.55 s (calcolo 32/60 = 0.533): la catena regge;
+   - colpi registrati ai frame 27–30 (L1), 20–23 (L2), 24–25 (L3), dentro le finestre;
+   - a 0.9 e 1.2 m vanno a segno tutti e tre. `Sword_Light_1` arriva fino a 1.6 m. Oltre
+     1.4 m L2 e L3 mancano, ma anche perché ogni colpo spinge il simp più lontano (a fine
+     catena è a 1.6–1.8 m).
+4. **Riposta**: a segno al frame 24–25 a 0.9, 1.2, 1.4, 1.5 e 1.6 m, sia a velocità 1.0 sia a
+   0.85. La finestra di 2 frame non perde colpi; `hit_end` può restare 26. Dopo una parata il
+   colpo arriva 0.369 s dopo il comando (calcolo 24/60 = 0.400; il resto è la fusione).
+5. **`Dodge_F` a 50 frame**: 0.833 s, **2.553 m**, invulnerabile 0.017–0.650 s (calcolo
+   frame 1–39, coincide).
+6. `Walk`/`Run` nuove e `Sword_Arms_*`: stesse durate, quindi blend e velocità di
+   riproduzione restano quelli della voce 15:28.
+7. **Catena pesante predisposta** (voce 16:40): MoveData `Sword_Heavy_1`, `_2`, `_3` collegati
+   come la catena leggera (`_3` non ha seguito; fermarsi dopo il secondo funziona già).
+   - Tempi provvisori dalla specifica: li sovrascrive l'importer quando arrivano le clip.
+   - Impatti come proposti: hit stop 0.10 / 0.10 / 0.14, knockback 1.5, Heavy / Heavy /
+     Knockdown, shake 0.4 / 0.4 / 0.7 ("forte").
+   - Danno provvisorio ×3 / ×3 / ×4, sul modello del pesante di oggi (×3): lo decide
+     l'utente.
+   - Il tasto pesante resta sul colpo vecchio (`Legacy_Area_Slash`) finché non arriva
+     `Sword_Heavy_1`: senza clip non partirebbe niente. All'arrivo lo collego.
+   - **Incroci leggero → pesante** (tua domanda 2): costano un campo per mossa (`nextHeavy`
+     sul leggero). Tecnicamente non c'è ostacolo; li decide l'utente.
+
+**L'utente può provare tutto**: velocità regolabili (PlayerMovement: `walkSpeed`,
+`sprintSpeed`, `lockMoveSpeed`), mosse ritimate, riposta (parata, poi attacco leggero), schivata
+nuova, salto, `Walk`/`Run` nuove.
+
+**Serve da te:** niente.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md` (sezioni Integrazione di
+`Sword_Parry`, `Sword_Riposte`, `Dodge_F`); MoveData e moveset nel commit del codice.
+
+## 2026-10-14 16:40 · animazione → codice
+
+**Decisione dell'utente:** il pesante della spada diventa una **catena di tre colpi**,
+`Sword_Heavy_1`, `_2`, `_3` (specifica in `MOVES.md`), al posto di `Sword_Heavy` singolo.
+
+**Serve da te:**
+1. Predisporre la catena pesante come quella leggera: tasto pesante → `Sword_Heavy_1`, di nuovo
+   pesante dopo `combo` → `_2`, poi `_3`. Ci si può fermare dopo il secondo.
+2. Dimmi se vuoi anche gli incroci leggero → pesante (es. dopo `Sword_Light_2` il pesante
+   parte da `_2`?). Per ora le clip li permettono solo se la posa coincide; li decide l'utente.
+3. Impatti proposti in `MOVES.md`; il terzo è un Knockdown.
+
+Le clip arrivano una alla volta, prima `Sword_Heavy_1`.
+
+**File toccati:** `Docs/Combat/MOVES.md`, `HANDOFF.md`.
+
+## 2026-10-14 16:37 · animazione → codice
+
+**Fatto:** FBX 16:35 con **`Walk` e `Run` nuove** e **`Sword_Arms_Walk/Run` rigenerate** su di
+loro (scarto busto e gambe < 1 cm), più `Dodge_F` a 50 frame (voce 16:28). Durate e fasi
+invariate: `Walk` 30, `Run` 24, braccia uguali.
+- `Run`: spalle in controrotazione ±20° (prima ±7°), testa stabile, braccia più ampie.
+- `Walk`: bacino più molleggiato (4 cm), busto, testa e braccia in ritardo sul bacino.
+
+**Serve da te:** reimport e prova; niente da cambiare nel controller. Poi l'utente prova
+tutto in gioco: velocità regolabili (voce 15:15), riposta, mosse ritimate, schivata nuova.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`, `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 16:28 · animazione → codice
+
+**Nota sugli script Blender (correzione alla voce 14:40):** le versioni vecchie non venivano
+da git. Era la copia dalla sessione animazione al disco che a volte scriveva una versione
+precedente dello stesso file. Scusa per il falso allarme. Ora `create_run.py` (v3),
+`create_walk.py` (v4) e `create_sword_arms.py` sul disco sono quelli giusti, verificati con
+checksum. **Committali** quando ti capita. `Walk` e `Run` nuove (più torsione e molleggio)
+arrivano al prossimo export, insieme a `Sword_Arms_Walk/Run` rigenerate.
+
+`Dodge_F` è stata ritimata dall'utente (FBX 16:19): 50 frame, invulnerabile 1–39, `cancel`
+47, sempre 2.5 m. Marker scelti dall'utente.
+
+**File toccati:** `Tools/Blender/create_run.py`, `create_walk.py`, `create_sword_arms.py`,
+`Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 16:02 · animazione → codice
+
+**Fatto:** l'utente ha **ritimato tutte le mosse della spada** con la regola dei tempi
+(`MOVES.md`): FBX 15:59, JSON 15:57. Durate e marker nuovi nella tabella "Ritiming del 14
+ottobre" di `MOVES.md`; l'importer li legge da solo. Raccordi della catena e ritorni in
+guardia verificati sull'FBX (scarti ≤ 6 mm).
+
+**Riportati a 1** i `speed` che avevo messo alle 15:15 (`Dodge_F` 0.8, `Sword_Light_1/2/3`
+0.85): il rallentamento ora è nelle clip, i due si sarebbero sommati.
+
+**Serve da te:**
+1. **Parata:** la finestra ora è **7–19** (prima 2–14). La guardia arriva 5 frame dopo,
+   quindi la parata va premuta prima. Ricontrolla col Parry Trainer quanto è difficile e
+   riporta i numeri all'utente.
+2. **Riposta:** il suo frame 0 ora coincide con il frame **13** della parata (prima l'8).
+   Se l'entrata nella riposta usa un frame fisso della parata, aggiornalo.
+3. Le finestre di colpo cambiate (`Sword_Light_1` attivi 27–31): verifica che i colpi
+   vadano a segno come prima e che la catena regga i tempi di `combo` nuovi.
+4. Scrivimi quando l'utente può provare.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`, `Dodge_F.asset`,
+`Sword_Light_1/2/3.asset` (`speed` 1), `Docs/Combat/MOVES.md`, `HANDOFF.md`.
+
+## 2026-10-14 15:45 · animazione → codice
+
+**Fatto:** esportata **`Sword_Riposte`** (FBX 15:40): 0–48, `hit_start` 24, `hit_end` 26,
+`cancel` 44, non ciclica. Affondo dritto; il frame 0 è il frame 8 di `Sword_Parry` (scarto
+0), il 48 la guardia. Tempi decisi dall'utente: carica tenuta lunga, scatto, braccio teso
+fino al 38. La punta resta nel bersaglio fino al ~40.
+
+**Serve da te:**
+1. Collegarla come riposta della spada: un attacco dopo una parata riuscita parte da qui
+   invece che da `Sword_Light_1`. Entrata dalla posa della parata, qualunque sia il frame
+   della parata al momento del comando (fusione breve).
+2. **Finestra attiva di 2 frame** (24–26): la punta arriva nel bersaglio proprio al 24.
+   Controlla che il colpo venga registrato anche a velocità 0.85 e con il bersaglio
+   a distanze diverse; se ne perde, dimmelo e allunghiamo `hit_end`.
+3. Impatto proposto in `MOVES.md` (hit stop 0.10, shake 0.4, knockback 1.5, Heavy).
+4. **Nuova regola dei tempi** in `MOVES.md`: le mosse nuove arriveranno più lunghe dei
+   valori di `PLAN.md`; non accorciarle in import.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`, `Docs/Combat/MOVES.md`,
+`HANDOFF.md`.
+
 ## 2026-10-14 15:28 · codice → animazione
 
 **Fatto** (voci 15:15 e 15:20).
