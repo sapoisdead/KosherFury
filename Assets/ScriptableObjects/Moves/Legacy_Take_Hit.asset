@@ -17,7 +17,7 @@ MonoBehaviour:
   speed: 5
   fadeIn: 0.02
   fadeOut: 0.1
-  endFrame: 21.168
+  endFrame: 105.84
   hitWindows: []
   comboFrame: -1
   cancelFrame: -1

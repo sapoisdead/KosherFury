@@ -17,10 +17,10 @@ public enum ReactionType { Light, Heavy, Launch, Knockdown }
 
 public enum DodgeDirection { Forward, Back, Left, Right }
 
-// Una finestra attiva della mossa: da startFrame incluso a endFrame escluso, in frame
-// a 60 Hz di tempo di gioco dall'inizio della mossa (cioe' gia' divisi per la velocita'
-// della clip). Con le clip nuove (speed 1) coincidono con i frame di Blender. Possono
-// essere frazionari per le clip vecchie, i cui eventi non cadono su frame interi.
+// Una finestra attiva della mossa: da startFrame incluso a endFrame escluso, in frame a
+// 60 Hz della clip (i frame di Blender). Seguono la velocita' della mossa da soli, perche'
+// si confrontano col tempo della clip. Possono essere frazionari per le clip vecchie, i
+// cui eventi non cadono su frame interi.
 [Serializable]
 public struct HitWindow
 {

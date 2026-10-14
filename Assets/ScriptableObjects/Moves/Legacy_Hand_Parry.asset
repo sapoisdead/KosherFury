@@ -17,12 +17,12 @@ MonoBehaviour:
   speed: 1.8
   fadeIn: 0.02
   fadeOut: 0.15
-  endFrame: 32.86667
+  endFrame: 59.160004
   hitWindows: []
   comboFrame: -1
   cancelFrame: 0
   parryStartFrame: 0
-  parryEndFrame: 19.333334
+  parryEndFrame: 34.8
   whiffRecoveryFrames: 0
   iframeStartFrame: -1
   iframeEndFrame: -1

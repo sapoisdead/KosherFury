@@ -39,4 +39,25 @@ public static class CombatDebugMenu
 
         Debug.Log("[ParryTrainer] Simp davanti al player: attacca ogni 2 s. Ogni colpo scrive nel log se e' stato parato, preso o a vuoto.");
     }
+
+    // Moltiplicatore di velocita' delle mosse del player, per provare il ritmo in gioco.
+    // Vale per la sessione di gioco in corso; il valore scelto si fissa poi nello speed
+    // delle singole mosse (MoveData). Si puo' regolare anche a mano nell'Inspector
+    // dell'ActionPlayer del player.
+    [MenuItem("KosherFury/Combat/Velocita' mosse/1.0")]  private static void Speed100() => SetMoveSpeed(1f);
+    [MenuItem("KosherFury/Combat/Velocita' mosse/0.85")] private static void Speed085() => SetMoveSpeed(0.85f);
+    [MenuItem("KosherFury/Combat/Velocita' mosse/0.7")]  private static void Speed070() => SetMoveSpeed(0.7f);
+
+    private static void SetMoveSpeed(float multiplier)
+    {
+        var player = PlayerManager.Instance != null ? PlayerManager.Instance.PlayerTransform : null;
+        var actions = player != null ? player.GetComponentInChildren<ActionPlayer>() : null;
+        if (!Application.isPlaying || actions == null)
+        {
+            Debug.LogWarning("[Velocita' mosse] Va usato in Play Mode, con il player in scena.");
+            return;
+        }
+        actions.SpeedMultiplier = multiplier;
+        Debug.Log($"[Velocita' mosse] moltiplicatore {multiplier:0.##}: le mosse del player girano a {multiplier:0.##} della loro velocita'.");
+    }
 }

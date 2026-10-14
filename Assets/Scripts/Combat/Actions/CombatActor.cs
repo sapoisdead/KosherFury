@@ -156,7 +156,7 @@ public class CombatActor : MonoBehaviour
     };
 
     private bool ReachedFrame(float frame) =>
-        move != null && frame >= 0f && player.IsPlaying && player.Current == move && player.ElapsedFrames >= frame;
+        move != null && frame >= 0f && player.IsPlaying && player.Current == move && player.ClipFrame >= frame;
 
     private bool Begin(MoveData next, State state)
     {
@@ -205,7 +205,7 @@ public class CombatActor : MonoBehaviour
 
         if (move == null || !player.IsPlaying || player.Current != move) return;
 
-        float frame = player.ElapsedFrames;
+        float frame = player.ClipFrame;
         UpdateHealthFlags(frame);
         ApplyLunge();
     }

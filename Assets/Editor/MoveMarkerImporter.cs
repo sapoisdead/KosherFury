@@ -190,15 +190,15 @@ public class MoveMarkerImporter : AssetPostprocessor
         return true;
     }
 
-    // Solo i tempi. I frame del JSON sono assoluti: si sottrae frame_start, e si
-    // dividono per la velocita' (i tempi del MoveData sono in tempo di gioco).
+    // Solo i tempi. I frame del JSON sono assoluti: si sottrae frame_start. Restano frame
+    // della clip, senza dividere per la velocita': e' l'ActionPlayer a confrontarli col
+    // tempo della clip, quindi cambiare speed dopo l'import non li sfasa.
     private static void UpdateMove(MoveData move, string name, Dictionary<string, object> action,
                                    Dictionary<string, AnimationClip> clips, StringBuilder report)
     {
         var markers = action.GetValueOrDefault("markers") as Dictionary<string, object> ?? new Dictionary<string, object>();
         float start = Num(action, "frame_start", 0f);
-        float speed = move.speed > 0f ? move.speed : 1f;
-        float Frame(string marker) => markers.TryGetValue(marker, out var v) ? ((float)(double)v - start) / speed : -1f;
+        float Frame(string marker) => markers.TryGetValue(marker, out var v) ? (float)(double)v - start : -1f;
 
         Undo.RecordObject(move, "Import Move Markers");
 
@@ -226,7 +226,7 @@ public class MoveMarkerImporter : AssetPostprocessor
         move.parryEndFrame = Frame("parry_end");
         move.iframeStartFrame = Frame("iframe_start");
         move.iframeEndFrame = Frame("iframe_end");
-        move.endFrame = (Num(action, "frame_end", start) - start) / speed;
+        move.endFrame = Num(action, "frame_end", start) - start;
 
         // marker obbligatori per tipo di mossa, come nello script di Blender
         string[] required = move.kind switch

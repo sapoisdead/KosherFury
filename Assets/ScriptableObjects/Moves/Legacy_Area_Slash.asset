@@ -20,8 +20,8 @@ MonoBehaviour:
   endFrame: -1
   hitWindows:
   - slot: 4
-    startFrame: 19.800001
-    endFrame: 41.25
+    startFrame: 17.28
+    endFrame: 35.999996
   comboFrame: -1
   cancelFrame: -1
   parryStartFrame: -1

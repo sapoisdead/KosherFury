@@ -38,6 +38,9 @@ public class ActionPlayer : MonoBehaviour
 {
     public const float FrameRate = MoveData.FrameRate;
 
+    [Tooltip("Moltiplica la velocita' di tutte le mosse di questo personaggio, sopra lo speed di ciascuna. Serve a trovare il ritmo giusto provando in gioco: si cambia anche in Play Mode, e le finestre lo seguono. Il valore scelto va poi fissato nello speed delle singole mosse.")]
+    [SerializeField, Range(0.3f, 2f)] private float speedMultiplier = 1f;
+
     private Animator animator;
     private CombatState combat;
     private IHitboxSource hitboxSource;
@@ -64,10 +67,20 @@ public class ActionPlayer : MonoBehaviour
     public bool IsPlaying => !finished;
     public MoveData Current => finished ? null : current;
 
-    // Tempo di gioco dall'inizio della mossa: tempo della clip / velocita'
-    public float Elapsed { get; private set; }
-    public float ElapsedFrames => Elapsed * FrameRate;
-    public float NormalizedTime => IsPlaying && current.Duration > 0f ? Mathf.Clamp01(Elapsed / current.Duration) : 0f;
+    public float SpeedMultiplier
+    {
+        get => speedMultiplier;
+        set => speedMultiplier = Mathf.Max(value, 0.01f);
+    }
+
+    // Velocita' a cui gira la mossa in corso: la sua, per il moltiplicatore
+    public float EffectiveSpeed => IsPlaying ? current.speed * speedMultiplier : speedMultiplier;
+
+    // Tempo della CLIP dall'inizio della mossa, in secondi e in frame a 60 Hz: e' su questo
+    // che si confrontano tutti i tempi del MoveData, quindi seguono la velocita' da soli.
+    public float ClipTime { get; private set; }
+    public float ClipFrame => ClipTime * FrameRate;
+    public float NormalizedTime => IsPlaying && current.ClipDuration > 0f ? Mathf.Clamp01(ClipTime / current.ClipDuration) : 0f;
 
     // La mossa in corso governa CombatState: chi altrimenti lo aggiornerebbe (il vecchio
     // PlayerAnimator, che lo deriva dagli stati del controller) deve astenersi.
@@ -117,7 +130,7 @@ public class ActionPlayer : MonoBehaviour
 
         var clipPlayable = AnimationClipPlayable.Create(graph, move.clip);
         clipPlayable.SetApplyFootIK(false);
-        clipPlayable.SetSpeed(move.speed);
+        clipPlayable.SetSpeed(move.speed * speedMultiplier);
         // niente SetTime(0): il playable nasce gia' a 0, e dopo un SetTime Unity non fa
         // avanzare il tempo nel frame successivo, che diventava un frame fermo a ogni mossa
         clipPlayable.SetDuration(move.clip.length);
@@ -134,7 +147,7 @@ public class ActionPlayer : MonoBehaviour
         }
 
         current = move;
-        Elapsed = 0f;
+        ClipTime = 0f;
         windowOpened = new bool[move.hitWindows.Length];
         windowClosed = new bool[move.hitWindows.Length];
         finished = false;
@@ -172,7 +185,7 @@ public class ActionPlayer : MonoBehaviour
 
         // HitStop arriva dalla Hitbox in FixedUpdate, quindi e' gia' noto qui
         bool frozen = HitStop.IsFrozen(gameObject);
-        Active.SetSpeed(frozen ? 0f : current.speed);
+        Active.SetSpeed(frozen ? 0f : EffectiveSpeed);
     }
 
     // Dopo l'animazione: il tempo della clip e' quello appena valutato, cioe' la posa
@@ -182,16 +195,19 @@ public class ActionPlayer : MonoBehaviour
     {
         if (finished || !Active.IsValid()) return;
 
-        Elapsed = (float)Active.GetTime() / Mathf.Max(current.speed, 0.0001f);
+        ClipTime = (float)Active.GetTime();
         UpdateWindows();
 
-        float duration = current.Duration;
-        if (!fadingOut && Elapsed >= duration - current.fadeOut)
+        // il crossfade d'uscita e' in secondi di gioco: parte quando alla fine della
+        // mossa manca meno di fadeOut, alla velocita' di adesso
+        float clipEnd = current.ClipDuration;
+        float remaining = (clipEnd - ClipTime) / Mathf.Max(EffectiveSpeed, 0.0001f);
+        if (!fadingOut && remaining <= current.fadeOut)
         {
             fadingOut = true;
             fadeTime = Mathf.Max(current.fadeOut, 0.0001f);
         }
-        if (Elapsed >= duration) Finish(0f);
+        if (ClipTime >= clipEnd) Finish(0f);
     }
 
     private void UpdateWeights(float dt)
@@ -239,7 +255,7 @@ public class ActionPlayer : MonoBehaviour
     // Hitbox.Activate fa comunque una lettura immediata, quindi il colpo viene testato.
     private void UpdateWindows()
     {
-        float frame = ElapsedFrames;
+        float frame = ClipFrame;
         var windows = current.hitWindows;
         for (int i = 0; i < windows.Length; i++)
         {

@@ -25,7 +25,7 @@ MonoBehaviour:
   parryEndFrame: -1
   whiffRecoveryFrames: 0
   iframeStartFrame: 0
-  iframeEndFrame: 20.199997
+  iframeEndFrame: 30.299995
   rootMotion: 1
   rootMotionScale: 4.4410777
   damageMultiplier: 1
