@@ -45,6 +45,8 @@ public class PlayerAnimator : MonoBehaviour
     private static readonly int StanceHash = Animator.StringToHash("Stance");
     private static readonly int IsLockedHash = Animator.StringToHash("IsLocked");
     private static readonly int JumpHash = Animator.StringToHash("Jump");
+    private static readonly int GroundedHash = Animator.StringToHash("Grounded");
+    private static readonly int LandCancelHash = Animator.StringToHash("LandCancel");
     private static readonly int SpeedMultiplierHash = Animator.StringToHash("SpeedMultiplier");
     private static readonly int GuardSpeedMultiplierHash = Animator.StringToHash("GuardSpeedMultiplier");
 
@@ -353,10 +355,18 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
+    // Salto in tre parti: Jump_Start (trigger Jump), Jump_Air in loop finche' Grounded e'
+    // falso, Jump_Land al ritorno a terra. I tempi (spinta, cancel) li tiene PlayerMovement.
     public void TriggerJump()
     {
+        animator.ResetTrigger(LandCancelHash);
         animator.SetTrigger(JumpHash);
     }
+
+    public void SetGrounded(bool grounded) => animator.SetBool(GroundedHash, grounded);
+
+    // Interrompe Jump_Land verso la locomozione: da chiamare dal cancel in poi
+    public void TriggerLandCancel() => animator.SetTrigger(LandCancelHash);
 
     // Scatto: la schivata rapida usata sotto lock, al posto della capriola.
     public void TriggerDash(DashDirection direction)

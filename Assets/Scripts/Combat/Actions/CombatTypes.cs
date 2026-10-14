@@ -9,7 +9,9 @@ using UnityEngine;
 public enum HitboxSlot { RightHand, LeftHand, RightFoot, LeftFoot, Weapon }
 
 // Che cosa fa una mossa: decide come la tratta la macchina a stati.
-public enum MoveKind { Attack, Parry, Dodge, Reaction }
+// Locomotion e' una clip suonata dall'Animator e non dall'ActionPlayer (il salto): il
+// MoveData serve solo a portare al codice i tempi dei marker.
+public enum MoveKind { Attack, Parry, Dodge, Reaction, Locomotion }
 
 // Come reagisce chi viene colpito. Per ora e' solo un dato: la reazione del
 // bersaglio e' ancora la clip unica di oggi (Take_hit). Servira' con le hit reaction nuove.

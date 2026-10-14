@@ -15,9 +15,18 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     [SerializeField] private float attackAdvanceSpeed = 1.2f;
     [Tooltip("Distanza a cui l'avanzamento durante il colpo si ferma. Sotto la portata del player (1.05-1.10 m) e sopra il minimo fisico fra i due corpi (0.80 m).")]
     [SerializeField] private float attackAdvanceMinDistance = 0.9f;
+
+    [Header("Salto")]
+    [Tooltip("Altezza del salto, in metri.")]
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -20f;
     [SerializeField] private float jumpBufferTime = 0.15f;
+    [Tooltip("Jump_Start: la spinta verso l'alto parte al suo marker liftoff.")]
+    [SerializeField] private MoveData jumpStartMove;
+    [Tooltip("Jump_Land: fino al suo marker cancel si resta fermi e non si attacca; da li' il movimento interrompe la clip.")]
+    [SerializeField] private MoveData jumpLandMove;
+    [Tooltip("Secondi senza appoggio prima che una caduta senza salto passi a Jump_Air (e poi atterri con Jump_Land). Sotto, scalini e pendenze non interrompono la corsa.")]
+    [SerializeField] private float fallGraceTime = 0.15f;
 
     [Header("Dash")]
     [Tooltip("Scatto laterale, disponibile solo sotto lock. Piu' corto e secco della capriola.")]
@@ -54,9 +63,16 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
     // torna a essere quella fissa di camminata.
     private bool analogMove;
 
-    private bool elevatePlayer;
     private bool jumpRequested;
     private float jumpRequestTime;
+
+    // Fase del salto, in tempo di gioco accumulato dall'inizio della fase. Start va dalla
+    // pressione alla spinta (liftoff), Air fino al ritorno a terra, Land fino alla fine di
+    // Jump_Land.
+    private enum JumpPhase { None, Start, Air, Land }
+    private JumpPhase jumpPhase;
+    private float jumpPhaseTime;
+    private float airTime;
     private Vector3 velocity;
     private Transform cameraTransform;
 
@@ -173,6 +189,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         if (InputLocked) return;
         if (!value.isPressed) return;
         if (UsesActions) { combatInput.Light(); return; }
+        if (!CanAct) return;
         animator.TriggerPunch();
     }
 
@@ -185,6 +202,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         if (!value.isPressed) return;
         if (!animator.IsArmed) return;
         if (UsesActions) { combatInput.Heavy(); return; }
+        if (!CanAct) return;
         animator.TriggerAreaSlash();
     }
 
@@ -193,6 +211,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         if (InputLocked) return;
         if (!value.isPressed) return;
         if (UsesActions) { combatInput.Parry(); return; }
+        if (!CanAct) return;
         animator.TriggerParry();
     }
 
@@ -221,6 +240,7 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         }
 
         if (IsDashing) return;                        // gia' in schivata: resta in coda
+        if (!CanAct) return;                          // in aria o in atterraggio: resta in coda
         if (moveInput.sqrMagnitude <= 0.01f) return;  // manca la direzione: aspetta
 
         // La schivata esiste solo agganciati: fuori lock non c'e' un bersaglio
@@ -284,10 +304,18 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         dashTimeRemaining = dashDuration;
     }
 
-    private void OnElevating()
-    {
-        elevatePlayer = true;
-    }
+    // Si puo' attaccare, parare e schivare: non in aria, non durante la spinta, e
+    // all'atterraggio solo dal cancel di Jump_Land in poi.
+    public bool CanAct => jumpPhase == JumpPhase.None
+                          || (jumpPhase == JumpPhase.Land && jumpPhaseTime >= LandCancelTime);
+
+    private bool LandLocked => jumpPhase == JumpPhase.Land && jumpPhaseTime < LandCancelTime;
+
+    private float LiftoffTime => jumpStartMove != null && jumpStartMove.liftoffFrame >= 0f
+        ? jumpStartMove.FrameToTime(jumpStartMove.liftoffFrame) : 0f;
+    private float LandCancelTime => jumpLandMove != null && jumpLandMove.cancelFrame >= 0f
+        ? jumpLandMove.FrameToTime(jumpLandMove.cancelFrame) : 0f;
+    private float LandEndTime => jumpLandMove != null ? jumpLandMove.DurationAt() : 0f;
 
     private void Update()
     {
@@ -298,30 +326,88 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
         HandleMovement();
     }
 
+    // Salto in tre parti (Jump_Start, Jump_Air, Jump_Land). La spinta parte al marker
+    // liftoff, non alla pressione: fino a li' i piedi sono a terra. Anche una caduta senza
+    // salto, oltre fallGraceTime, passa da Jump_Air e atterra con Jump_Land.
     private void HandleGravityAndJump()
     {
         if (jumpRequested && Time.time - jumpRequestTime > jumpBufferTime)
             jumpRequested = false;
 
-        if (controller.isGrounded)
+        bool grounded = controller.isGrounded;
+        airTime = grounded ? 0f : airTime + Time.deltaTime;
+        jumpPhaseTime += Time.deltaTime;
+
+        if (grounded && velocity.y < 0f)
+            velocity.y = -2f;
+
+        switch (jumpPhase)
         {
-            if (velocity.y < 0f)
-                velocity.y = -2f;
+            case JumpPhase.None:
+                if (grounded && jumpRequested && CanStartJump())
+                    StartJump();
+                else if (!grounded && airTime > fallGraceTime)
+                    EnterAir();
+                break;
 
-            if (jumpRequested)
-            {
-                animator.TriggerJump();
-                jumpRequested = false;
-            }
+            case JumpPhase.Start:
+                if (jumpPhaseTime >= LiftoffTime)
+                {
+                    velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                    EnterAir();
+                }
+                break;
 
-            if (elevatePlayer)
-            {
-                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-                elevatePlayer = false;
-            }
+            case JumpPhase.Air:
+                // in salita isGrounded puo' restare vero per il primo frame dopo la spinta
+                if (grounded && velocity.y <= 0f)
+                    SetJumpPhase(JumpPhase.Land);
+                break;
+
+            case JumpPhase.Land:
+                if (jumpPhaseTime < LandCancelTime) break;
+                if (jumpRequested && CanStartJump())
+                {
+                    StartJump();
+                    break;
+                }
+                // dal cancel il movimento interrompe la clip; senza input finisce da sola
+                if (moveInput.sqrMagnitude > 0.01f)
+                {
+                    animator.TriggerLandCancel();
+                    SetJumpPhase(JumpPhase.None);
+                }
+                else if (jumpPhaseTime >= LandEndTime)
+                    SetJumpPhase(JumpPhase.None);
+                break;
         }
 
         velocity.y += gravity * Time.deltaTime;
+    }
+
+    // Non durante una mossa, uno scatto o un attacco del sistema vecchio
+    private bool CanStartJump()
+    {
+        if (IsDashing) return false;
+        if (actionPlayer != null && actionPlayer.IsPlaying) return false;
+        if (combatActor != null && combatActor.IsBusy) return false;
+        return animator == null || !animator.IsCommittedToAttack;
+    }
+
+    private void StartJump()
+    {
+        jumpRequested = false;
+        animator.TriggerJump();
+        SetJumpPhase(JumpPhase.Start);
+    }
+
+    private void EnterAir() => SetJumpPhase(JumpPhase.Air);
+
+    private void SetJumpPhase(JumpPhase phase)
+    {
+        jumpPhase = phase;
+        jumpPhaseTime = 0f;
+        animator.SetGrounded(phase != JumpPhase.Air);
     }
 
     private void HandleMovement()
@@ -344,6 +430,13 @@ public class PlayerMovement : MonoBehaviour, IActorMotor
             controller.Move(useRootMotionForDash
                 ? velocity * Time.deltaTime
                 : (dashDirection * dashSpeed + velocity) * Time.deltaTime);
+            return;
+        }
+
+        // Atterraggio: fermi fino al cancel di Jump_Land, poi il movimento la interrompe
+        if (LandLocked)
+        {
+            controller.Move(velocity * Time.deltaTime);
             return;
         }
 

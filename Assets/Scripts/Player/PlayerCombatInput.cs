@@ -84,6 +84,9 @@ public class PlayerCombatInput : MonoBehaviour
             return;
         }
 
+        // in aria e nella prima parte dell'atterraggio il comando resta in coda
+        if (movement != null && !movement.CanAct) return;
+
         bool accepted = buffered switch
         {
             Command.Light => actor.RequestLight(),

@@ -657,6 +657,9 @@ MonoBehaviour:
   jumpHeight: 1.5
   gravity: -20
   jumpBufferTime: 0.15
+  jumpStartMove: {fileID: 11400000, guid: f3086f005607948fea948dc893454048, type: 2}
+  jumpLandMove: {fileID: 11400000, guid: 20c62255836d14aaeb029ec4cb8c55ee, type: 2}
+  fallGraceTime: 0.15
   dashSpeed: 5
   dashDuration: 0.35
   dodgeBufferTime: 0.15

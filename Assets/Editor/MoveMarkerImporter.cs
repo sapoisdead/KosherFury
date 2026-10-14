@@ -226,6 +226,7 @@ public class MoveMarkerImporter : AssetPostprocessor
         move.parryEndFrame = Frame("parry_end");
         move.iframeStartFrame = Frame("iframe_start");
         move.iframeEndFrame = Frame("iframe_end");
+        move.liftoffFrame = Frame("liftoff");
         move.endFrame = Num(action, "frame_end", start) - start;
 
         // marker obbligatori per tipo di mossa, come nello script di Blender
@@ -234,6 +235,7 @@ public class MoveMarkerImporter : AssetPostprocessor
             MoveKind.Attack => new[] { "hit_start", "hit_end" },
             MoveKind.Parry => new[] { "parry_start", "parry_end" },
             MoveKind.Dodge => new[] { "iframe_start", "iframe_end" },
+            _ when name.StartsWith("Jump_Start") => new[] { "liftoff" },
             _ => new string[0],
         };
         var missing = required.Where(r => !markers.ContainsKey(r)).ToArray();
@@ -245,6 +247,7 @@ public class MoveMarkerImporter : AssetPostprocessor
             $" combo {Fmt(move.comboFrame)} cancel {Fmt(move.cancelFrame)}" +
             (move.kind == MoveKind.Parry ? $" parata {Fmt(move.parryStartFrame)}-{Fmt(move.parryEndFrame)}" : "") +
             (move.kind == MoveKind.Dodge ? $" iframe {Fmt(move.iframeStartFrame)}-{Fmt(move.iframeEndFrame)}" : "") +
+            (move.liftoffFrame >= 0f ? $" liftoff {Fmt(move.liftoffFrame)}" : "") +
             $" fine {move.endFrame:0.#}");
     }
 

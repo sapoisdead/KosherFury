@@ -31,6 +31,7 @@ MonoBehaviour:
   iframeEndFrame: -1
   rootMotion: 0
   rootMotionScale: 1
+  liftoffFrame: -1
   damageMultiplier: 2.5
   hitStop: 0.1
   cameraShake: 0.45

@@ -52,6 +52,10 @@ public class MoveData : ScriptableObject
     [Tooltip("Moltiplica il root motion. Le clip di dash vecchie coprono ~1 m, e il gioco di oggi le scala x4.")]
     public float rootMotionScale = 1f;
 
+    [Header("Salto")]
+    [Tooltip("Frame della clip in cui parte la spinta verso l'alto (marker liftoff di Jump_Start).")]
+    public float liftoffFrame = -1f;
+
     [Header("Impatto (colpo andato a segno)")]
     [Tooltip("Moltiplica il danno base dell'arma.")]
     public float damageMultiplier = 1f;
@@ -86,6 +90,13 @@ public class MoveData : ScriptableObject
     {
         float effective = speed * speedMultiplier;
         return effective > 0f ? ClipDuration / effective : 0f;
+    }
+
+    // Da frame della clip a secondi di gioco, alla velocita' della mossa
+    public float FrameToTime(float frame, float speedMultiplier = 1f)
+    {
+        float effective = speed * speedMultiplier;
+        return effective > 0f ? frame / FrameRate / effective : 0f;
     }
 
     public static bool InWindow(float frame, float start, float end) =>
