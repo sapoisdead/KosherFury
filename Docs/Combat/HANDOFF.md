@@ -32,6 +32,170 @@ Formato di una voce:
 
 ---
 
+## 2026-10-14 13:15 · codice → animazione
+
+**Fatto** (voci 10:15–12:50), commit `679f820`. **`Walk` e `Run` sono giocabili.**
+1. **Velocità sul prefab**: `walkSpeed` **1.2**, `sprintSpeed` **5.0**, nuovo `lockMoveSpeed`
+   **0.8**, che è il tetto da agganciati, separato dalla camminata.
+2. **Locomozione libera** (a mani nude e con l'arma): blend su `Speed` in m/s veri, **`Walk`
+   a 1.2 e `Run` a 5.0**, velocità dello stato 1 (era 2). Con l'arma, per ora, le stesse clip
+   intere: le braccia oscillano finché non arrivano `<Set>_Arms_Walk/Run`.
+3. **Velocità di riproduzione = velocità reale ÷ velocità nativa**: sotto 1.2 rallenta (fino
+   al minimo 0.35), fra 1.2 e 5.0 resta 1, perché le soglie del blend coincidono con le
+   velocità native e il blend combacia da solo; sopra 5.0 accelera, **senza tetto**. Se
+   l'utente alza `sprintSpeed`, la corsa accelera in proporzione.
+4. **Locomozione agganciata**: parametro proprio (`GuardSpeedMultiplier`, velocità nativa
+   `guardClipSpeed`). Oggi gira ancora sulle clip vecchie a 4.8, quindi a 0.8 m/s sono al
+   minimo di 0.35 e **i piedi scivolano**. Si sistema con gli strafe: `guardClipSpeed` 0.8 e
+   un blend 2D sulle quattro direzioni.
+
+**Misure** (Play Mode, tempo accumulato):
+
+| Caso | Velocità | Riproduzione |
+|---|---|---|
+| tastiera, camminata | 1.22 m/s | ×1.00 |
+| tastiera, sprint | 5.08 m/s | ×1.00 |
+| stick a metà (0.5) | 2.54 m/s | ×1.00, blend camminata/corsa |
+| stick a 0.2 | 1.02 m/s | ×0.83 |
+| agganciato, tastiera o stick pieno | 0.81 m/s | guardia ×0.35 (clip vecchie) |
+
+**Come si passa oggi da camminata a corsa** (domanda 3 delle 12:50):
+- **Tastiera**: WASD è sempre camminata (1.2). La corsa è **Shift sinistro tenuto** (sprint,
+  5.0). Non c'è niente in mezzo: il `Speed` dell'Animator passa da 1.2 a 5.0 con uno
+  smorzamento di circa 0.1 s, e il blend attraversa la zona intermedia in quel tempo.
+- **Pad**: la velocità è **inclinazione dello stick × 5.0** senza lock (stick pieno = corsa),
+  × 0.8 col lock. **L3 tenuto** forza la corsa. Ogni inclinazione intermedia dà una velocità
+  intermedia: a metà stick 2.5 m/s, cioè il blend 66% `Walk` + 34% `Run`.
+- Lo sprint **sgancia il lock** (come oggi).
+- **Da provare in gioco**: con 1.2 e 5.0 così lontani, le andature intermedie col pad sono un
+  impasto di due passi diversi (4 passi/s e 2.5 passi/s). Se non regge, posso mappare lo
+  stick a due sole andature (sotto una soglia camminata, sopra corsa) invece che in continuo.
+
+**IA e lock col player più lento** (domanda 4):
+- **Lock**: aggancio entro 20 m, sgancio oltre 30 m. Sono distanze, quindi non cambiano.
+- **Simp**: corre a **4.2** in avvicinamento e cammina a **1.8** in combattimento (sotto i 5 m,
+  `combatRange`). Quindi:
+  - **camminando (1.2) o agganciato (0.8) il player è più lento del simp in combattimento
+    (1.8)**: indietreggiando non si sfugge, chiude sempre la distanza. Per staccarsi
+    restano la schivata (2.5 m) e lo sprint, che però sgancia il lock;
+  - **in sprint (5.0) il player è più veloce del simp in corsa (4.2)**: si stacca di 0.8 m/s,
+    per arrivare dai 5 m del combattimento ai 10 m di `abandonRange` servono circa 6 s.
+- Lo spacing del simp (`spacingDistance` 1.3, ritirata 0.35 s) e i suoi tempi di reazione non
+  dipendono dalla velocità del player. Cambia invece il bilancio: prima il player
+  agganciato (2.8) era più veloce del simp (1.8), ora è più lento. **Da provare in gioco**:
+  se il simp diventa troppo appiccicoso, si abbassa il suo 1.8.
+- L'avanzamento sotto lock durante i colpi (1.2 m/s finché il bersaglio è oltre 0.9 m) resta
+  uguale, e vale anche per i colpi nuovi senza lunge.
+
+**Ancora da fare** (voce 15:50 del 13): layer delle braccia per arma sulla locomozione
+libera, salto in tre parti, guardia e strafe per arma col lock (`Sword_Guard_Idle` è ancora
+solo in anteprima). Li preparo così le clip si provano appena arrivano.
+
+**Serve da te:** niente. Il giudizio sulle andature lo dà l'utente.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`; codice, controller e prefab nel commit `679f820`;
+gli script Blender `create_run/walk/strafe.py` (tuoi) nel commit docs.
+
+## 2026-10-14 12:50 · animazione → codice
+
+**Decisione dell'utente: la camminata scende a `walkSpeed` 1.2 m/s** (sostituisce i 2.4 delle
+voci 10:20 e 10:35). Con le gambe del Rabbi (45 cm) il passo di una camminata vera arriva a
+30 cm: a 2.4 m/s sarebbero serviti ~7 passi al secondo. Una corsetta a 2.4 m/s è stata
+provata e scartata. La clip `Walk` (**esportata alle 12:50**, take `Armature|Walk`, nel JSON 0–30 `cyclic: true`, loop chiuso, sul posto; import come `Run`: Loop Time on, Bake Into Pose per rotazione e posizione, compressione Off) è di **30 frame**, 4 passi al secondo,
+sempre almeno un piede a terra, sul posto.
+
+**Serve da te:**
+1. `walkSpeed` = 1.2 sul prefab. **Col lock la velocità scende a 0.8 m/s** (decisione
+   dell'utente, 12:55): gli strafe `Sword_Guard_Walk_F/B/L/R` sono a passo accostato,
+   ciclo di 24 frame, velocità nativa 0.8 m/s in tutte e quattro le direzioni, sul posto,
+   **esportati alle 12:59** (take `Armature|Sword_Guard_Walk_F/B/L/R`, nel JSON 0–24
+   `cyclic: true`, loop chiusi; import come `Walk`). Approvati dall'utente in Blender. Serve un parametro separato (es. `lockMoveSpeed` 0.8) e la velocità di
+   riproduzione degli strafe calcolata su 0.8, come per `Walk` e `Run`. Il blend fra le
+   quattro direzioni è il tuo (2D sulla direzione dell'input rispetto al bersaglio).
+2. Velocità nativa di `Walk` **1.2 m/s** nella compensazione della velocità di riproduzione
+   (voce 10:35), senza tetto.
+3. Con la camminata a 1.2 e la corsa a 5.0 c'è un salto grande: se la locomozione libera
+   sfuma fra le due in base all'input analogico, la soglia/blend va ricalcolata su questi
+   valori. Dimmi come funziona oggi il passaggio camminata → corsa (input analogico o tasto).
+4. Controlla l'IA e il lock (distanze di aggancio, inseguimento) con il player più lento a
+   camminare, e segnala cosa cambia.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`, `Docs/Combat/HANDOFF.md`, `MOVES.md`,
+`Tools/Blender/create_walk.py` e `create_strafe.py` (nuovi).
+
+## 2026-10-14 11:30 · animazione → codice
+
+**Fatto:** `Run` esportata in `Rabbi_anim.fbx` (take `Armature|Run`), ciclo di **24 frame**
+a 60 fps, loop chiuso (posa del frame 24 = frame 0, scarto 0 mm), **sul posto**: il piede a
+terra scorre all'indietro a circa 5 m/s, il bacino non avanza. Nel JSON: `Run`, 0–24,
+`cyclic: true`, nessun marker. Clip condivisa da tutte le armi.
+
+**Serve da te:**
+1. Import: **Loop Time** on (Loop Pose off: la chiusura è già nella clip), Root Transform
+   Rotation e Position Y/XZ **Bake Into Pose** (Based Upon: Original), compressione Off.
+2. Velocità nativa della clip **5.0 m/s**: velocità di riproduzione = velocità reale ÷ 5.0,
+   senza tetto (voce 10:35). `sprintSpeed` 5.0.
+3. Nella locomozione libera con la spada, `Run` va sotto il layer braccia per arma, quando
+   c'è; finché manca `Sword_Arms_Run` va bene la clip intera (braccia che oscillano).
+4. Scrivimi qui quando è giocabile: l'utente la prova in gioco. Dalla clip il ciclo appare
+   un po' rigido ("clunky"), lo rifiniamo dopo averla vista in movimento.
+
+**File toccati:** `Assets/Art/Rabbi/Animations/Rabbi_anim.fbx`, `Rabbi_anim_events.json`,
+`Tools/Blender/create_run.py` (nuovo: genera la `Run` di base), `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 10:35 · animazione → codice
+
+**Correzione alla voce 10:20, decisione dell'utente:** la corsa scende a **`sprintSpeed`
+5.0 m/s** (non 6.2). Con le gambe del Rabbi (~50 cm), 6.2 m/s avrebbe chiesto un ciclo di
+18 frame, cioè 6–7 passi al secondo: troppo. La clip `Run` sarà di **24 frame** (0.40 s),
+2.0 m per ciclo, passo 1.0 m. La camminata resta 2.4 m/s per ora (si rivede quando tocca a
+`Walk`).
+
+**Serve da te**, oltre alla voce 10:20:
+1. `sprintSpeed` = 5.0 sul prefab.
+2. Velocità di riproduzione della locomozione = velocità reale ÷ velocità nativa della clip
+   (5.0 per `Run`, 2.4 per `Walk`), **anche sopra 1**, senza tetto. Così, se l'utente in gioco
+   trova la corsa lenta e alza `sprintSpeed`, la clip accelera in proporzione e i piedi non
+   scivolano. Oggi `SpeedMultiplier` vale solo sotto la camminata.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`.
+
+## 2026-10-14 10:20 · animazione → codice
+
+**Decisione dell'utente sulle velocità di locomozione** (sostituisce la domanda della voce
+10:15): una via di mezzo fra quelle attuali e una versione più lenta.
+- **Camminata `walkSpeed` 2.4 m/s** (era 2.8). Vale anche come tetto col lock.
+- **Corsa `sprintSpeed` 6.2 m/s** (era 7.0).
+
+Le clip nuove saranno animate esattamente su queste velocità:
+- `Run`: ciclo di **18 frame** (0.30 s), 1.86 m per ciclo, passo 0.93 m;
+- `Walk` e `<Set>_Guard_Walk_F/B/L/R`: ciclo di **26 frame** (0.433 s), 1.04 m per ciclo,
+  passo 0.52 m. Le quattro direzioni con la stessa durata.
+
+**Serve da te:**
+1. Imposta le due velocità sul prefab del player.
+2. Nella locomozione nuova (controller ridotto o blend tree) le soglie e la compensazione
+   della velocità di riproduzione (oggi `walkClipSpeed` / `SpeedMultiplier`) devono usare
+   **2.4 e 6.2**, che sono le velocità reali delle clip nuove, non più 4.8 e 9.6.
+3. Controlla se qualcosa nell'IA dei simp o nel lock dipende dalle velocità vecchie
+   (distanze di aggancio, inseguimento) e segnalalo.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`.
+
+## 2026-10-14 10:15 · animazione → codice
+
+**Fatto:** l'utente ha provato la fetta verticale. **Colpi, catena e parata approvati**
+(`chiusa` in `MOVES.md`). `Dodge_F` forse troppo veloce: resta in prova, si rivede più avanti.
+Prossimo: locomozione (corsa per prima), poi strafe e salto.
+
+**Serve da te:** quando hai pronto il layer delle braccia sulla locomozione libera e il
+salto in tre parti (voce 15:50 del 13), scrivilo qui. Intanto confermami le velocità che
+la locomozione deve rispettare: dal prefab leggo `walkSpeed` 2.8 e `sprintSpeed` 7.0 m/s,
+con il lock che limita alla camminata. Sono quelle definitive? Lo stride delle clip si
+ricava da lì.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`.
+
 ## 2026-10-14 10:10 · codice → animazione
 
 **Fatto** (voce 09:58):

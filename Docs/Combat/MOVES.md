@@ -11,12 +11,12 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 
 | Mossa | Personaggio | Stato | Prossimo passo |
 |---|---|---|---|
-| `Sword_Guard_Idle` | Rabbi | esportata | approvata in gioco dall'utente; codice: integrazione col sistema nuovo (A.3/A.4) |
-| `Sword_Light_1` | Rabbi | in prova | utente: giudizio in gioco (portata 1.59 m tenuta) |
-| `Sword_Light_2` | Rabbi | esportata | codice: in catena e prova in gioco |
-| `Sword_Light_3` | Rabbi | esportata | codice: in catena e prova in gioco |
-| `Sword_Parry` | Rabbi | esportata | codice: collegare come parata della spada |
-| `Dodge_F` | Rabbi | esportata | codice: collegare come schivata in avanti |
+| `Sword_Guard_Idle` | Rabbi | chiusa | approvata dall'utente in gioco (14 ottobre) |
+| `Sword_Light_1` | Rabbi | chiusa | approvata dall'utente in gioco (14 ottobre) |
+| `Sword_Light_2` | Rabbi | chiusa | approvata dall'utente in gioco (14 ottobre) |
+| `Sword_Light_3` | Rabbi | chiusa | approvata dall'utente in gioco (14 ottobre) |
+| `Sword_Parry` | Rabbi | chiusa | approvata dall'utente in gioco (14 ottobre) |
+| `Dodge_F` | Rabbi | in prova | utente: forse troppo veloce, da rivedere più avanti |
 
 **Ordine dei lavori** (13 ottobre):
 1. Fetta verticale della spada: `Sword_Guard_Idle` ✔, `Sword_Light_1` ✔, `Sword_Light_2` ✔,
@@ -28,6 +28,17 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 3. Resto della spada: `Sword_Riposte`, `Sword_Heavy`, `Dodge_B/L/R`.
 4. Reazioni: `Hit_Light_F/B`, `Hit_Heavy`, `Knockdown`, `GetUp`, `Death`.
 5. Pugni, poi coltello, poi i nemici.
+
+**Velocità di locomozione** (decisioni del 14 ottobre): camminata **1.2 m/s** (anche col
+lock), corsa **5.0 m/s**. `Run`: ciclo di **24 frame**, passo 1.0 m, il piede a terra scorre
+di 8.3 cm a frame; esportata il 14/10, in prova. `Walk`: **camminata vera**, sempre almeno
+un piede a terra, ciclo di **30 frame**, passo 0.30 m (4 passi al secondo), 18 frame a terra
+per piede con rullata tallone → punta. Con gambe di 45 cm una camminata più veloce non regge:
+la corsetta a 2.4 m/s è stata provata e scartata dall'utente. Se in gioco la camminata è
+lenta, si può alzare fino a ~1.4 m/s e la clip accelera in proporzione. Strafe col lock
+`Sword_Guard_Walk_F/B/L/R`: **0.8 m/s**, passo accostato (prima il piede dal lato in cui si
+va), ciclo di 24 frame, passo 0.32 m per piede, busto e braccia della guardia. Generatori di base:
+`Tools/Blender/create_run.py`, `create_walk.py`.
 
 **Nota sui tempi:** dopo la prova di `Sword_Light_1` i tempi di specifica delle altre
 mosse (37–50 frame) vanno rivisti con lo stesso criterio prima di animarle.

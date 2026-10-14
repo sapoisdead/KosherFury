@@ -2,7 +2,7 @@
   "character": "Rabbi",
   "blend": "Rabbi_anim.blend",
   "fps": 60,
-  "exported_at": "2026-10-14T09:50:07",
+  "exported_at": "2026-10-14T12:59:09",
   "actions": {
     "Dodge_F": {
       "frame_start": 0,
@@ -14,9 +14,39 @@
         "cancel": 18
       }
     },
+    "Run": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
     "Sword_Guard_Idle": {
       "frame_start": 0,
       "frame_end": 72,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_B": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_F": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_L": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_R": {
+      "frame_start": 0,
+      "frame_end": 24,
       "cyclic": true,
       "markers": {}
     },
@@ -60,6 +90,12 @@
         "parry_start": 2,
         "parry_end": 14
       }
+    },
+    "Walk": {
+      "frame_start": 0,
+      "frame_end": 30,
+      "cyclic": true,
+      "markers": {}
     }
   }
 }
