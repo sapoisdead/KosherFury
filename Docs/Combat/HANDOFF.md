@@ -32,6 +32,54 @@ Formato di una voce:
 
 ---
 
+## 2026-10-14 10:10 · codice → animazione
+
+**Fatto** (voce 09:58):
+1. **`Dodge_F` importata** con XZ libero (root motion), senza loop, e **collegata come
+   schivata in avanti per spada, coltello e pugni** al posto di `Dash_Front`, con root
+   motion **senza scala**. Tempi dall'importer: invulnerabilità 3–14, cancel 18, fine 24.
+   Le altre direzioni restano quelle vecchie (con il loro ×4).
+2. **Misure**:
+   - nella clip in Unity: spostamento finale **2.500 m**, massimo 2.588 m al frame 18,
+     quindi **rinculo di 8.8 cm** nei frame 18–24;
+   - in gioco (tempo accumulato, 60 Hz): **2.518 m** in avanti, 0.6 cm di lato;
+     **invulnerabile dal frame 3 al 13** (11 frame, come 3–14 con fine esclusa). Il rinculo
+     in gioco è **4.6 cm**, ridotto dal crossfade d'uscita: c'è, ma è più piccolo;
+   - a ×0.7: stessa distanza (2.523 m) in 35 frame invece di 24, invulnerabilità di 15 frame.
+3. Avvisi d'import di scala su gambe e piedi di `Dodge_F` (e già di `Sword_Light_1` e
+   `_3`): è il rumore del bake dell'IK visto il 13, da ignorare.
+
+**Serve da te:** niente. Ora la prova l'utente.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; asset `Dodge_F` e moveset.
+
+## 2026-10-14 09:58 · animazione → codice
+
+**Fatto:** letta la voce delle 09:50 (tempi in frame della clip e moltiplicatore: perfetto).
+Esportata **`Dodge_F`** (FBX delle 09:50, sei take; JSON delle 09:50: `iframe_start` 3,
+`iframe_end` 14, `cancel` 18, fine 24). Verificato reimportando:
+- **root motion nella clip**: il bacino avanza di **2.50 m esatti** in −Y di Blender (il
+  davanti del Rabbi), nessuno spostamento laterale o verticale netto;
+- frame 0 = guardia; frame 24 = guardia traslata di 2.5 m (scarto 0.0 cm, 0.0°);
+- due passi, bacino fino a 15–16 m/s ai frame 4–5 e 11–12; invulnerabilità 3–14 copre
+  quasi tutto lo spostamento (2.35 m su 2.5);
+- nessuna scala ≠ 1. Comune a tutte le armi: braccia raccolte.
+- Da guardare: il bacino arriva a 2.60 m al frame 18 e **torna indietro di 10 cm** fino al
+  24; nello stesso tratto i piedi strisciano a terra (il destro di 33 cm) per tornare
+  nella posizione della guardia. L'ho segnalato all'utente.
+
+**Serve da te:**
+1. Import come da `PIPELINE.md`: **XZ non in bake into pose** (root motion), loop spento.
+2. Collegala come schivata in avanti per tutte le armi, al posto dello scatto vecchio
+   (`Dash_Front`), con root motion **senza scala** (la distanza è già nella clip; il
+   vecchio ×4 di `dashRootMotionScale` non va applicato). Le altre direzioni restano
+   quelle vecchie finché non arrivano `Dodge_B/L/R`.
+2. Misura in gioco: distanza percorsa (attesa 2.5 m), invulnerabilità 3–14, e se a fine
+   schivata si vede il rinculo di 10 cm. Ricorda che con `speed` < 1 la distanza resta la
+   stessa ma ci mette di più.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`, `MOVES.md`; export dell'utente.
+
 ## 2026-10-14 09:50 · codice → animazione
 
 **Fatto** (voce 09:45), commit `8b590e4`:

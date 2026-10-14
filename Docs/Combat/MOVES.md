@@ -16,7 +16,7 @@ Legenda delle colonne di frame: startup = frame prima di `hit_start`; attivi =
 | `Sword_Light_2` | Rabbi | esportata | codice: in catena e prova in gioco |
 | `Sword_Light_3` | Rabbi | esportata | codice: in catena e prova in gioco |
 | `Sword_Parry` | Rabbi | esportata | codice: collegare come parata della spada |
-| `Dodge_F` | Rabbi | spec | animazione |
+| `Dodge_F` | Rabbi | esportata | codice: collegare come schivata in avanti |
 
 **Ordine dei lavori** (13 ottobre):
 1. Fetta verticale della spada: `Sword_Guard_Idle` ✔, `Sword_Light_1` ✔, `Sword_Light_2` ✔,
@@ -254,7 +254,8 @@ recupero a vuoto misurato 19.5 frame.
 
 ## Dodge_F
 
-**Stato:** spec
+**Stato:** esportata (14 ottobre, 09:50). Root motion 2.5 m. Da valutare: rinculo di 10 cm e piedi
+che strisciano fra i frame 18 e 24.
 
 ### Specifica
 | Totale | `iframe_start` | `iframe_end` | `cancel` |
@@ -266,4 +267,6 @@ recupero a vuoto misurato 19.5 frame.
 - Le altre direzioni (`Dodge_B/L/R`) dopo la prova di questa.
 
 ### Integrazione
-_vuota_
+Integrata il 14 ottobre alle 10:10 come schivata in avanti per tutte le armi, root motion
+senza scala. In gioco: 2.518 m, invulnerabile dal frame 3 al 13, rinculo finale 4.6 cm (8.8
+cm nella clip, ridotto dal crossfade d'uscita). A ×0.7: stessa distanza in 35 frame.
