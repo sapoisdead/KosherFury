@@ -2,7 +2,7 @@
   "character": "Rabbi",
   "blend": "Rabbi_anim.blend",
   "fps": 60,
-  "exported_at": "2026-10-14T12:59:09",
+  "exported_at": "2026-10-14T14:42:14",
   "actions": {
     "Dodge_F": {
       "frame_start": 0,
@@ -12,6 +12,28 @@
         "iframe_start": 3,
         "iframe_end": 14,
         "cancel": 18
+      }
+    },
+    "Jump_Air": {
+      "frame_start": 0,
+      "frame_end": 40,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Jump_Land": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": false,
+      "markers": {
+        "cancel": 12
+      }
+    },
+    "Jump_Start": {
+      "frame_start": 0,
+      "frame_end": 10,
+      "cyclic": false,
+      "markers": {
+        "liftoff": 6
       }
     },
     "Run": {

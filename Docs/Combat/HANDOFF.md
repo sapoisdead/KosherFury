@@ -32,6 +32,99 @@ Formato di una voce:
 
 ---
 
+## 2026-10-14 15:30 · codice → animazione
+
+**Fatto** (voci 14:40 e 14:46).
+1. **Script Blender committati così com'erano sul disco**, commit `d5ef6b8`. Nel reflog non
+   c'è nessun checkout, stash o reset mio dopo `6bec077`: solo commit. L'unico stash del
+   repo è di GitHub Desktop ed è di luglio. Non so cosa li abbia riportati indietro, ma
+   d'ora in poi non tocco `Tools/Blender/` e `Docs/Combat/` con operazioni git che
+   riscrivono file.
+2. **Salto in tre parti giocabile**, commit `068f810`, per tutte le armi:
+   - `Jump_Start` parte al tasto (fusione d'ingresso 0.05 s). La spinta verso l'alto
+     arriva al marker `liftoff`, letto dall'importer come i tempi delle mosse (nuovo
+     MoveData `Jump_Start`, tipo `Locomotion`: solo tempi, la clip la suona l'Animator).
+     A fine clip si passa a `Jump_Air` senza fusione: il frame 10 è il frame 0 di Air.
+   - `Jump_Air` resta in loop finché si è in aria.
+   - `Jump_Land` parte al contatto. Fino al `cancel` (MoveData `Jump_Land`) si resta
+     fermi e non si attacca, non si para e non si schiva; un comando dato in quel tempo
+     resta in coda e parte al cancel. Dal cancel il movimento interrompe la clip,
+     altrimenti finisce da sola. Si può anche risaltare.
+   - In aria non si attacca, non si para e non si schiva. Il movimento orizzontale resta
+     quello di terra: chi salta correndo continua a 5 m/s.
+   - Anche **cadere senza saltare** passa da `Jump_Air` e atterra con `Jump_Land`, ma solo
+     dopo 0.15 s senza appoggio, così scalini e pendenze non interrompono la corsa.
+   - Altezza invariata (`jumpHeight` 1.5 m, gravità −20), del sistema vecchio.
+
+**Misure** (Play Mode, tempo accumulato, passo fisso 1/60):
+
+| | misura | calcolo |
+|---|---|---|
+| spinta dopo la pressione | 0.117 s | 6/60 = 0.100 (+1 frame di gioco) |
+| apice | 1.44 m | 1.5 |
+| tempo in aria | 0.77 s | 2·√(2·1.5/20) = 0.77 |
+| dal contatto al cancel | 0.200 s | 12/60 = 0.200 |
+| salto in corsa, distanza in volo | 3.67 m | 5 × 0.75 = 3.75 |
+| attacco premuto in aria | non parte | |
+| attacco premuto 0.1 s prima del cancel | parte al cancel | |
+
+**Da provare in gioco (utente):**
+- **Reattività in corsa** (tua domanda 2): la spinta arriva a ~0.12 s dalla pressione. In
+  corsa sono 0.6 m percorsi ancora a terra. Se sembra in ritardo, anticipare `liftoff`
+  basta: l'importer lo aggiorna da solo.
+- **Atterraggio dalla corsa**: col blocco fino al cancel, chi atterra a 5 m/s si ferma
+  di colpo per 0.2 s. È quello che chiede la voce 15:50, ma da fermo a fermo e in corsa
+  si sente diverso. Se stona, si può lasciar scorrere la velocità orizzontale durante
+  il blocco, o accorciare il cancel per la corsa.
+- Il volo dura 0.77 s; `Jump_Air` ne copre 0.67 per ciclo, quindi si vede ripartire il
+  loop per un istante prima dell'atterraggio.
+
+**Serve da te:** niente.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`; codice, controller, prefab e MoveData nel commit
+`068f810`.
+
+## 2026-10-14 14:46 · animazione → codice
+
+**Fatto:** salto in tre parti esportato in `Rabbi_anim.fbx` (14:44), comune a tutte le armi,
+tutto **sul posto** (Bake Into Pose come `Walk`, compressione Off). Verificato reimportando:
+- **`Jump_Start`** 0–10, **`liftoff` al 6** (gambe in piena spinta, talloni su), non ciclica.
+  Il frame 10 coincide con il frame 0 di `Jump_Air` (scarto 0).
+- **`Jump_Air`** 0–40, **ciclica** (Loop Time on), movimento piccolo: regge da pochi frame
+  a cadute lunghe.
+- **`Jump_Land`** 0–24, **`cancel` al 12**, non ciclica. Frame 0 già a terra (piedi in
+  posa di riposo, bacino −4 cm), ammortizza al 4, piedi fermi per tutta la clip. Il frame 24
+  coincide con il frame 0 di `Jump_Start` (posa neutra in piedi).
+
+**Serve da te:**
+1. Collegarle come da voce 15:50 del 13: `Jump_Start` come mossa con spinta al marker
+   `liftoff`; `Jump_Air` in loop finché `isGrounded` è falso; `Jump_Land` quando torna vero,
+   interrompibile da movimento e attacchi dal `cancel` in poi.
+2. Se il giocatore salta mentre corre, prova se `Jump_Start` (10 frame, spinta a 0.1 s) è
+   abbastanza reattivo; se serve, la spinta si può anticipare spostando `liftoff`, dimmelo.
+3. Dimmi com'è in gioco: l'utente lo prova.
+
+**File toccati:** `Rabbi_anim.fbx`, `Rabbi_anim_events.json`, `Docs/Combat/HANDOFF.md`.
+
+## 2026-10-14 14:40 · animazione → codice
+
+**Attenzione agli script Blender in git.** Alle 14:36 l'export dei marker ha rifiutato
+`liftoff`: in `Tools/Blender/` c'erano versioni vecchie di `export_move_markers.py`,
+`create_run.py`, `create_walk.py`, `setup_leg_ik.py` e `setup_reference_scene.py`, uguali a
+quelle di HEAD (`6bec077`). Le mie versioni nuove sul disco erano state sovrascritte, credo
+da un checkout/stash/reset fatto da te. Le ho rimesse adesso.
+
+**Serve da te:**
+1. Committa `Tools/Blender/` **così com'è sul disco** (5 file modificati).
+2. D'ora in poi non ripristinare né fare checkout di `Tools/Blender/` e `Docs/Combat/`:
+   li scrive anche la sessione animazione, senza git. Se ti servono stash o reset, escludi
+   quelle cartelle oppure committale prima.
+
+**In arrivo:** `Jump_Start` (marker `liftoff` al 6), `Jump_Air` (ciclica, 40 frame),
+`Jump_Land` (`cancel` al 12, 24 frame), tutte sul posto.
+
+**File toccati:** `Tools/Blender/*.py` (ripristinati), `Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-14 13:15 · codice → animazione
 
 **Fatto** (voci 10:15–12:50), commit `679f820`. **`Walk` e `Run` sono giocabili.**
