@@ -32,6 +32,86 @@ Formato di una voce:
 
 ---
 
+## 2026-10-14 10:20 · codice → animazione
+
+**Fatto** (voce 09:45), commit `8b590e4`:
+1. **I tempi seguono `speed`, anche a mano dopo l'import.** Avevi ragione: l'importer
+   divideva i marker per `speed` al momento dell'import, quindi cambiando `speed` dopo le
+   finestre restavano al ritmo vecchio. Ora **tutti i tempi del `MoveData` sono frame della
+   clip** (i frame di Blender) e l'`ActionPlayer` li confronta col tempo della clip:
+   finestre attive, `combo`, `cancel`, parata, invulnerabilità e fine si spostano insieme
+   alla lama a qualunque velocità. L'importer scrive i marker così come sono. Il lunge
+   seguiva già (usa il tempo normalizzato). `liftoff` seguirà la stessa regola quando ci
+   sarà il salto. Unica eccezione voluta: il **recupero a vuoto** della parata resta in
+   tempo di gioco, perché è una penalità e non un punto della clip.
+   I `Legacy_*` (tempi in frame di gioco) sono stati convertiti una volta: stesse durate in
+   gioco di prima.
+2. **Per provare**:
+   - **moltiplicatore globale** sull'`ActionPlayer` del player (Inspector, *Speed
+     Multiplier*), regolabile in Play Mode;
+   - menu **`KosherFury/Combat/Velocità mosse/1.0 · 0.85 · 0.7`**;
+   - il valore scelto si fissa poi nello `speed` della singola mossa.
+   **Collaudo** (Play Mode, tempo di gioco accumulato): `Sword_Light_1` a ×1.0 / ×0.85 / ×0.7
+   → Active ai frame 18.0 / 21.2 / 25.7, Recovery a 24.0 / 28.2 / 34.5, fine a 54.0 / 63.8 /
+   77.3 (attesi 18 / 21.2 / 25.7, 24 / 28.2 / 34.3, 54 / 63.5 / 77.1). Il pugno vecchio ha
+   gli stessi tempi di prima (24.5 / 33.2 / 60).
+3. **Durate delle mosse nuove** (calcolo dai marker; tempo di gioco):
+
+   | Mossa | Frame | ×1.0 | ×0.85 | ×0.7 |
+   |---|---|---|---|---|
+   | `Sword_Light_1` totale | 54 | 0.900 s | 1.059 s | 1.286 s |
+   | hit_start | 18 | 0.300 s | 0.353 s | 0.429 s |
+   | hit_end | 24 | 0.400 s | 0.471 s | 0.571 s |
+   | combo | 28 | 0.467 s | 0.549 s | 0.667 s |
+   | cancel | 34 | 0.567 s | 0.667 s | 0.810 s |
+   | `Sword_Light_2` totale | 50 | 0.833 s | 0.980 s | 1.190 s |
+   | hit_start | 14 | 0.233 s | 0.275 s | 0.333 s |
+   | hit_end | 20 | 0.333 s | 0.392 s | 0.476 s |
+   | combo | 26 | 0.433 s | 0.510 s | 0.619 s |
+   | cancel | 30 | 0.500 s | 0.588 s | 0.714 s |
+   | `Sword_Light_3` totale | 60 | 1.000 s | 1.176 s | 1.429 s |
+   | hit_start | 18 | 0.300 s | 0.353 s | 0.429 s |
+   | hit_end | 24 | 0.400 s | 0.471 s | 0.571 s |
+   | cancel | 36 | 0.600 s | 0.706 s | 0.857 s |
+   | `Sword_Parry` totale | 30 | 0.500 s | 0.588 s | 0.714 s |
+   | parry_start | 2 | 0.033 s | 0.039 s | 0.048 s |
+   | parry_end | 14 | 0.233 s | 0.275 s | 0.333 s |
+
+   Per confronto, i colpi di oggi durano 1.0–1.1 s con startup 0.33–0.54 s (voce 11:23 del
+   12 ottobre). Nota: rallentando la parata si allarga anche la sua finestra (0.20 s a ×1.0,
+   0.29 s a ×0.7).
+
+**Serve da te:** niente. Il ritmo lo sceglie l'utente in gioco.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`; codice e asset nel commit `8b590e4`.
+
+## 2026-10-14 09:45 · animazione → codice
+
+**Fatto:** letta la voce delle 16:53 (parata collegata, `Parry Trainer`: ottimo).
+
+**L'utente trova le animazioni nuove troppo veloci** e vuole provare a **rallentarle da
+Unity** prima di rifarle. Serve per trovare il ritmo giusto mossa per mossa; se la durata
+trovata funziona ma lo scatto si ammorbidisce, la rifaremo in Blender allungando solo le
+parti lente.
+
+**Serve da te:**
+1. **Verifica che `MoveData.speed` sposti anche le finestre.** Il commento in `MoveData`
+   dice che i tempi sono "frame a 60 Hz di tempo di GIOCO". L'importer però scrive i frame
+   della **clip** (i marker di Blender). Con `speed` 0.8 il marker `hit_start` 18 cade al
+   frame di gioco 22.5: finestre attive, `combo`, `cancel`, parata, invulnerabilità,
+   `liftoff`, lunge e fine mossa devono scalare insieme alla clip, altrimenti la hitbox si
+   apre prima della lama. Scegli tu dove farlo (importer che scrive frame / speed, o
+   conversione a runtime), ma deve restare vero anche se l'utente cambia `speed` a mano
+   dopo l'import.
+2. **Un modo rapido per provare**: un moltiplicatore globale di velocità delle mosse del
+   player regolabile in Play Mode (per esempio un campo nell'Inspector di `CombatActor` o
+   un menu `KosherFury/Combat/...`), più il campo `speed` per mossa per fissare il valore
+   scelto. Valori da provare: 1.0, 0.85, 0.7.
+3. Dopo, riporta per ogni mossa nuova la durata in secondi a 1.0 / 0.85 / 0.7, così la
+   specifica delle prossime mosse parte dal ritmo scelto dall'utente.
+
+**File toccati:** `Docs/Combat/HANDOFF.md`.
+
 ## 2026-10-13 16:53 · codice → animazione
 
 **Fatto** (voci 16:20 e 16:25):
