@@ -77,7 +77,7 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &592201312368192602
 GameObject:
@@ -156,7 +156,7 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &5240990425417328714
 GameObject:
@@ -235,7 +235,7 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1 &5305719805405890125
 GameObject:
@@ -575,7 +575,7 @@ MonoBehaviour:
   executionSlowMoScale: 0.15
   executionSlowMoDuration: 0.2
   knockback: 1.5
-  knockbackOnParry: 4.5
+  knockbackOnParry: 2
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1001 &8003798782246217102
 PrefabInstance:
@@ -714,7 +714,20 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 526527751133493395}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 203311326135572064}
   m_SourcePrefab: {fileID: 100100000, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+--- !u!4 &268821688969090890 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7829577706673091268, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+  m_PrefabInstance: {fileID: 8003798782246217102}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &800470077293092933 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7208261743932278219, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
+  m_PrefabInstance: {fileID: 8003798782246217102}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1609529147061328790 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -484974042906411496, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}
@@ -777,6 +790,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxHealth: 200
   hitStunDuration: 2.5
+  despawnOnDeath: 1
 --- !u!114 &989940904612404151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -794,6 +808,12 @@ MonoBehaviour:
   leftHandHitbox: {fileID: 0}
   rightFootHitbox: {fileID: 0}
   leftFootHitbox: {fileID: 0}
+  attackDamageMultiplier:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
 --- !u!114 &5360258398520838417
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -810,18 +830,18 @@ MonoBehaviour:
   abandonRange: 20
   attackRange: 0.9
   strikeDistance: 0.85
-  spacingDistance: 1.2
+  spacingDistance: 2
   commitIntervalMin: 0.25
   commitIntervalMax: 0.6
-  retreatDuration: 0.15
-  closingTimeout: 2.5
+  retreatDuration: 0.5
+  closingTimeout: 3.5
   maxChain: 3
-  aimTolerance: 25
-  rotationSpeed: 15
-  minDistance: 0.8
-  runSpeed: 8
+  aimTolerance: 15
+  rotationSpeed: 20
+  minDistance: 1
+  runSpeed: 5.5
   walkSpeed: 1.8
-  combatRange: 3
+  combatRange: 5
   speedHysteresis: 1
   reactionDelayMin: 0.16
   reactionDelayMax: 0.26
@@ -831,7 +851,7 @@ MonoBehaviour:
   punishCooldown: 1.2
   maxSimultaneousAttackers: 2
   attackSlotCooldown: 1.2
-  formationStandoff: 2
+  formationStandoff: 4
   formationArc: 180
 --- !u!195 &1518404672002169821
 NavMeshAgent:
@@ -883,6 +903,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Knockback
   decay: 5
   stopThreshold: 0.05
+--- !u!114 &203311326135572064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7192914117633530079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e71bb31f6f2df4c08ae68eb82ab9466f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitImpactReaction
+  bones:
+  - bone: {fileID: 268821688969090890}
+    weight: 1
+  - bone: {fileID: 800470077293092933}
+    weight: 0.5
+  degreesPerForce: 20
+  maxDegrees: 60
+  recoveryTime: 0.5
 --- !u!4 &7537211493377376869 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4dd35d9d816d54d76a0c20317148664f, type: 3}

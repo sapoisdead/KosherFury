@@ -1,0 +1,151 @@
+{
+  "character": "Rabbi",
+  "blend": "Rabbi_anim.blend",
+  "fps": 60,
+  "exported_at": "2026-10-14T16:35:14",
+  "actions": {
+    "Dodge_F": {
+      "frame_start": 0,
+      "frame_end": 50,
+      "cyclic": false,
+      "markers": {
+        "iframe_start": 1,
+        "iframe_end": 39,
+        "cancel": 47
+      }
+    },
+    "Jump_Air": {
+      "frame_start": 0,
+      "frame_end": 40,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Jump_Land": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": false,
+      "markers": {
+        "cancel": 12
+      }
+    },
+    "Jump_Start": {
+      "frame_start": 0,
+      "frame_end": 10,
+      "cyclic": false,
+      "markers": {
+        "liftoff": 6
+      }
+    },
+    "Run": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Arms_Run": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Arms_Walk": {
+      "frame_start": 0,
+      "frame_end": 30,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Idle": {
+      "frame_start": 0,
+      "frame_end": 72,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_B": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_F": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_L": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Guard_Walk_R": {
+      "frame_start": 0,
+      "frame_end": 24,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Idle": {
+      "frame_start": 0,
+      "frame_end": 72,
+      "cyclic": true,
+      "markers": {}
+    },
+    "Sword_Light_1": {
+      "frame_start": 0,
+      "frame_end": 60,
+      "cyclic": false,
+      "markers": {
+        "hit_start": 27,
+        "hit_end": 31,
+        "combo": 35,
+        "cancel": 45
+      }
+    },
+    "Sword_Light_2": {
+      "frame_start": 0,
+      "frame_end": 50,
+      "cyclic": false,
+      "markers": {
+        "hit_start": 20,
+        "hit_end": 26,
+        "combo": 32,
+        "cancel": 36
+      }
+    },
+    "Sword_Light_3": {
+      "frame_start": 0,
+      "frame_end": 60,
+      "cyclic": false,
+      "markers": {
+        "hit_start": 22,
+        "hit_end": 28,
+        "cancel": 40
+      }
+    },
+    "Sword_Parry": {
+      "frame_start": 0,
+      "frame_end": 30,
+      "cyclic": false,
+      "markers": {
+        "parry_start": 7,
+        "parry_end": 19
+      }
+    },
+    "Sword_Riposte": {
+      "frame_start": 0,
+      "frame_end": 48,
+      "cyclic": false,
+      "markers": {
+        "hit_start": 24,
+        "hit_end": 26,
+        "cancel": 44
+      }
+    },
+    "Walk": {
+      "frame_start": 0,
+      "frame_end": 30,
+      "cyclic": true,
+      "markers": {}
+    }
+  }
+}

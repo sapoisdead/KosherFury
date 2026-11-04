@@ -56,6 +56,13 @@ public class WeaponManager : MonoBehaviour, IWeaponHolder
         if (equippedWeapon != null)
             Destroy(equippedWeapon);
 
+        // Va azzerato qui, PRIMA del return anticipato qui sotto: i pugni non hanno
+        // un handPrefab, quindi passando a mani nude CurrentHitbox restava puntato
+        // alla hitbox della spada appena distrutta, e il primo OnWeaponStart in
+        // volo la riattivava.
+        equippedWeapon = null;
+        CurrentHitbox = null;
+
         CurrentWeapon = data;
 
         if (data == null || data.handPrefab == null || rightHandSocket == null) return;
@@ -74,6 +81,7 @@ public class WeaponManager : MonoBehaviour, IWeaponHolder
             Destroy(equippedWeapon);
 
         equippedWeapon = null;
+        CurrentHitbox = null;
         CurrentWeapon = null;
         currentIndex = -1;
     }

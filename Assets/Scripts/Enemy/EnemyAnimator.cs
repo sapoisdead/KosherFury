@@ -10,7 +10,10 @@ public class EnemyAnimator : MonoBehaviour
     [SerializeField] private Hitbox rightFootHitbox;
     [SerializeField] private Hitbox leftFootHitbox;
 
-    private Animator animator;
+    [Tooltip("Moltiplicatore di danno per singolo colpo, stesso schema del player (PlayerAnimator.punchComboMultiplier): un valore per ogni voce di AttackStates, nello stesso ordine. Chi sovrascrive AttackStates (es. DemonValeAnimator) deve ridimensionare/riordinare questo array in Inspector sul proprio prefab per farlo combaciare. Se manca una voce per lo stato corrente, il moltiplicatore resta 1 (nessun effetto), non 0.")]
+    [SerializeField] private float[] attackDamageMultiplier = { 1f, 1f, 1f, 1f, 1f };
+
+    protected Animator animator;
     private NavMeshAgent agent;
     private EnemyWeaponManager weaponManager;
     private Health health;
@@ -42,8 +45,9 @@ public class EnemyAnimator : MonoBehaviour
     };
 
     // Nomi degli STATI dell'Animator, non dei trigger: servono a capire se il simp
-    // e' dentro a un attacco, per ricavarne la fase.
-    private static readonly int[] AttackStates =
+    // e' dentro a un attacco, per ricavarne la fase. Virtuale perche' ogni
+    // sottoclasse ha stati di attacco diversi (vedi DemonValeAnimator).
+    private static readonly int[] DefaultAttackStates =
     {
         Animator.StringToHash("Punch_Right"),
         Animator.StringToHash("Punch_Left"),
@@ -51,6 +55,8 @@ public class EnemyAnimator : MonoBehaviour
         Animator.StringToHash("Kick_Left"),
         Animator.StringToHash("Slash"),
     };
+
+    protected virtual int[] AttackStates => DefaultAttackStates;
 
     private void Awake()
     {
@@ -110,7 +116,7 @@ public class EnemyAnimator : MonoBehaviour
         return inTakeHitAnim || (health != null && health.IsStunned);
     }
 
-    public void TriggerAttack()
+    public virtual void TriggerAttack()
     {
         if (weaponManager != null && weaponManager.CurrentWeapon != null && !weaponManager.CurrentWeapon.isFists)
         {
@@ -165,14 +171,34 @@ public class EnemyAnimator : MonoBehaviour
     public void OnLeftFootStart()  => OpenWindow(leftFootHitbox, UnarmedDamage());
     public void OnLeftFootEnd()    => CloseWindow(leftFootHitbox);
 
-    public void OnWeaponStart()    => OpenWindow(weaponManager?.CurrentHitbox, (weaponManager?.CurrentWeapon?.damage ?? 0f) * DamageMultiplier);
+    public void OnWeaponStart()    => OpenWindow(weaponManager?.CurrentHitbox, (weaponManager?.CurrentWeapon?.damage ?? 0f) * DamageMultiplier * PerMoveMultiplier());
     public void OnWeaponEnd()      => CloseWindow(weaponManager?.CurrentHitbox);
 
     // Moltiplicatore esterno sul danno, 1 di default. Usato da GuardianBT per
     // alzarlo mentre la guardia difende Vana (e ancora di piu' una volta
     // rilasciata): deve essere un deterrente forte, non solo fisico (knockback
-    // azzerato durante la difesa) ma anche punitivo.
+    // azzerato durante la difesa) ma anche punitivo. Si moltiplica assieme a
+    // attackDamageMultiplier (PerMoveMultiplier), non lo sostituisce: uno e'
+    // situazionale (chi sta attaccando e perche'), l'altro e' per singolo colpo.
     public float DamageMultiplier { get; set; } = 1f;
+
+    // Stesso schema di PlayerAnimator.MultiplierForCurrentState: cerca lo stato
+    // Animator corrente fra AttackStates e ne legge il fattore parallelo in
+    // attackDamageMultiplier. A differenza del player (che ritorna 0 se lo
+    // stato non e' fra quelli attesi, perche' li' un mancato match vuol dire
+    // "nessuna finestra dovrebbe essere aperta") qui il default e' 1: gli
+    // eventi OnXxxStart di un nemico scattano solo durante il proprio attacco,
+    // quindi un mancato match e' quasi sempre solo un array non ridimensionato
+    // dopo aver cambiato AttackStates in una sottoclasse, non un caso da azzerare.
+    private float PerMoveMultiplier()
+    {
+        int hash = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+        var states = AttackStates;
+        for (int i = 0; i < states.Length; i++)
+            if (states[i] == hash)
+                return i < attackDamageMultiplier.Length ? attackDamageMultiplier[i] : 1f;
+        return 1f;
+    }
 
     // finestra di colpo e fase Active aperte e chiuse insieme, come per il player
     private void OpenWindow(Hitbox hitbox, float damage)
@@ -190,6 +216,6 @@ public class EnemyAnimator : MonoBehaviour
     private float UnarmedDamage()
     {
         var w = weaponManager?.CurrentWeapon;
-        return (w != null && w.isFists ? w.damage : 0f) * DamageMultiplier;
+        return (w != null && w.isFists ? w.damage : 0f) * DamageMultiplier * PerMoveMultiplier();
     }
 }

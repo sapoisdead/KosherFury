@@ -22,16 +22,19 @@ namespace BehaviourTree
         private readonly CombatState combatState;
         private readonly float attackRange;
         private readonly float arriveDistance;
+        private readonly float returnDistance;
         private readonly float turnSpeed;
         private readonly float moveSpeed;
 
         private bool inPosition;
         private bool hasCommandedTarget;
+        private bool attackTriggered;
         private Vector3 lastCommandedTarget;
 
         public GuardDuty(GuardianBT self, NavMeshAgent agent, Transform enemy, Transform player,
                          EnemyAnimator enemyAnimator, CombatState combatState,
-                         float attackRange, float arriveDistance, float turnSpeed, float moveSpeed)
+                         float attackRange, float arriveDistance, float returnDistance,
+                         float turnSpeed, float moveSpeed)
         {
             this.self = self;
             this.agent = agent;
@@ -41,6 +44,7 @@ namespace BehaviourTree
             this.combatState = combatState;
             this.attackRange = attackRange;
             this.arriveDistance = arriveDistance;
+            this.returnDistance = returnDistance;
             this.turnSpeed = turnSpeed;
             this.moveSpeed = moveSpeed;
         }
@@ -111,6 +115,24 @@ namespace BehaviourTree
                     inPosition = true;
                 }
             }
+            // Rientro con isteresi. Arrivata sul posto la guardia non ridava piu'
+            // la destinazione: spinta via dalle compagne, dal knockback o da un
+            // colpo, restava dove l'avevano lasciata e l'anello si deformava.
+            // La soglia di rientro e' piu' larga di arriveDistance apposta: con
+            // una sola soglia la guardia oscillerebbe dentro e fuori, che e' il
+            // modo in cui era gia' tornata la camminata sul posto.
+            else if (inPosition && agent.isOnNavMesh)
+            {
+                Vector3 here = enemy.position;
+                Vector3 there = target;
+                here.y = there.y = 0f;
+
+                if (Vector3.Distance(here, there) > returnDistance)
+                {
+                    inPosition = false;
+                    hasCommandedTarget = false;   // cosi' il blocco sopra ridà la destinazione
+                }
+            }
 
             // Postazione fissa: una volta arrivata guarda sempre nella stessa
             // direzione, verso l'esterno del semicerchio (di spalle a Vana), MAI
@@ -121,11 +143,25 @@ namespace BehaviourTree
                 enemy.rotation = Quaternion.RotateTowards(enemy.rotation, facing, turnSpeed * Time.deltaTime);
             }
 
+            // Attacca SOLO da ferma, cioe' una volta presa la postazione. Prima
+            // questo blocco girava anche durante il tragitto: a una guardia il
+            // cui percorso passava vicino al player il ResetPath qui sotto
+            // annullava il viaggio, poi l'autoriparazione lo faceva ripartire, e
+            // il frame dopo veniva annullato di nuovo. Era il motivo per cui
+            // certe guardie non arrivavano mai al proprio posto.
             bool isAttacking = combatState != null && combatState.IsAttacking;
-            if (!isAttacking && Vector3.Distance(enemy.position, player.position) <= attackRange)
+            if (isAttacking) attackTriggered = false;
+
+            if (inPosition && !isAttacking && !attackTriggered
+                && Vector3.Distance(enemy.position, player.position) <= attackRange)
             {
                 agent.ResetPath();   // si ferma di netto per il colpo, niente scivolata a meta' swing
                 enemyAnimator.TriggerAttack();
+                // Fra il trigger e l'ingresso nello stato c'e' la fusione, e li'
+                // IsAttacking e' ancora falso: senza questo il trigger veniva
+                // riarmato a ogni frame di quella finestra e restava carico per
+                // un attacco in piu' a vuoto (stesso difetto gia' visto su Praise).
+                attackTriggered = true;
             }
 
             return NodeState.Running;

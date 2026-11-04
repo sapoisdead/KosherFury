@@ -10,5 +10,7 @@ public class WeaponData : ScriptableObject
     public float damage = 50f;
     public Sprite iconSprite;
     public bool isFists;
+    [Tooltip("Le mosse di quest'arma per il sistema d'azioni nuovo. Vuoto = l'arma usa ancora il sistema vecchio.")]
+    public Moveset moveset;
 
 }

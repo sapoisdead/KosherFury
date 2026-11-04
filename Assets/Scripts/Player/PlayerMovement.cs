@@ -2,14 +2,31 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : MonoBehaviour, IActorMotor
 {
     [Header("Movement")]
-    [SerializeField] private float walkSpeed = 4.8f;
-    [SerializeField] private float sprintSpeed = 9.6f;
+    [Tooltip("Camminata libera, in m/s. Regolabile: la clip Walk (nativa 1.2 m/s) viene riprodotta a walkSpeed / 1.2, quindi i piedi non scivolano.")]
+    [SerializeField] private float walkSpeed = 1.2f;
+    [Tooltip("Corsa (sprint), in m/s. Regolabile: la clip Run (nativa 5.0 m/s) viene riprodotta a sprintSpeed / 5.0.")]
+    [SerializeField] private float sprintSpeed = 5f;
+    [Tooltip("Velocita' massima da agganciati (strafe), in m/s. Separata dalla camminata: gli strafe in guardia sono a passo accostato, piu' lenti. Regolabile: la clip viene riprodotta a velocita' / guardClipSpeed (PlayerAnimator).")]
+    [SerializeField] private float lockMoveSpeed = 0.8f;
+    [Tooltip("Velocita' con cui il player si porta avanti DURANTE il proprio colpo, solo se agganciato. Serve a recuperare la spinta che il colpo precedente ha impresso al bersaglio: senza, dopo due o tre colpi il nemico e' fuori portata e la combo si spezza. Non e' movimento libero, punta solo al bersaglio e si ferma a attackAdvanceMinDistance.")]
+    [SerializeField] private float attackAdvanceSpeed = 1.2f;
+    [Tooltip("Distanza a cui l'avanzamento durante il colpo si ferma. Sotto la portata del player (1.05-1.10 m) e sopra il minimo fisico fra i due corpi (0.80 m).")]
+    [SerializeField] private float attackAdvanceMinDistance = 0.9f;
+
+    [Header("Salto")]
+    [Tooltip("Altezza del salto, in metri.")]
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -20f;
     [SerializeField] private float jumpBufferTime = 0.15f;
+    [Tooltip("Jump_Start: la spinta verso l'alto parte al suo marker liftoff.")]
+    [SerializeField] private MoveData jumpStartMove;
+    [Tooltip("Jump_Land: fino al suo marker cancel si resta fermi e non si attacca; da li' il movimento interrompe la clip.")]
+    [SerializeField] private MoveData jumpLandMove;
+    [Tooltip("Secondi senza appoggio prima che una caduta senza salto passi a Jump_Air (e poi atterri con Jump_Land). Sotto, scalini e pendenze non interrompono la corsa.")]
+    [SerializeField] private float fallGraceTime = 0.15f;
 
     [Header("Dash")]
     [Tooltip("Scatto laterale, disponibile solo sotto lock. Piu' corto e secco della capriola.")]
@@ -26,6 +43,17 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController controller;
     private PlayerAnimator animator;
     private Animator anim;
+    private ActionPlayer actionPlayer;
+    private CombatActor combatActor;
+    private PlayerCombatInput combatInput;
+
+    // L'arma in mano ha un Moveset: i comandi d'attacco, parata e schivata vanno al
+    // sistema d'azioni nuovo invece che al PlayerAnimator vecchio.
+    private bool UsesActions => combatInput != null && combatInput.HasMoveset;
+
+    // Riferimento congelato del root motion della mossa in corso (come dashFrame)
+    private MoveData rootMotionMove;
+    private Quaternion rootMotionFrame = Quaternion.identity;
     private Vector2 moveInput;
     private bool isSprinting;
     private InputAction moveAction;
@@ -35,9 +63,16 @@ public class PlayerMovement : MonoBehaviour
     // torna a essere quella fissa di camminata.
     private bool analogMove;
 
-    private bool elevatePlayer;
     private bool jumpRequested;
     private float jumpRequestTime;
+
+    // Fase del salto, in tempo di gioco accumulato dall'inizio della fase. Start va dalla
+    // pressione alla spinta (liftoff), Air fino al ritorno a terra, Land fino alla fine di
+    // Jump_Land.
+    private enum JumpPhase { None, Start, Air, Land }
+    private JumpPhase jumpPhase;
+    private float jumpPhaseTime;
+    private float airTime;
     private Vector3 velocity;
     private Transform cameraTransform;
 
@@ -67,6 +102,9 @@ public class PlayerMovement : MonoBehaviour
         controller = GetComponent<CharacterController>();
         animator = GetComponent<PlayerAnimator>();
         anim = GetComponent<Animator>();
+        actionPlayer = GetComponent<ActionPlayer>();
+        combatActor = GetComponent<CombatActor>();
+        combatInput = GetComponent<PlayerCombatInput>();
 
         if (Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -110,9 +148,10 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // Quanto si va, dato il tetto di velocita' del contesto: libero si arriva alla
-    // corsa, agganciati ci si ferma alla camminata da combattimento, perche' girare
-    // attorno al nemico a stick pieno e' il gesto piu' comune del combattimento e
-    // farne partire la corsa sgancerebbe il lock ogni volta.
+    // corsa, agganciati ci si ferma a lockMoveSpeed, perche' girare attorno al nemico a
+    // stick pieno e' il gesto piu' comune del combattimento e farne partire la corsa
+    // sgancerebbe il lock ogni volta. Da tastiera, senza sprint, la velocita' e' la
+    // camminata, o il tetto del lock se e' piu' basso.
     private float MoveSpeed(float maxSpeed)
     {
         if (isSprinting) return sprintSpeed;
@@ -149,6 +188,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (InputLocked) return;
         if (!value.isPressed) return;
+        if (UsesActions) { combatInput.Light(); return; }
+        if (!CanAct) return;
         animator.TriggerPunch();
     }
 
@@ -160,6 +201,8 @@ public class PlayerMovement : MonoBehaviour
         if (InputLocked) return;
         if (!value.isPressed) return;
         if (!animator.IsArmed) return;
+        if (UsesActions) { combatInput.Heavy(); return; }
+        if (!CanAct) return;
         animator.TriggerAreaSlash();
     }
 
@@ -167,6 +210,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (InputLocked) return;
         if (!value.isPressed) return;
+        if (UsesActions) { combatInput.Parry(); return; }
+        if (!CanAct) return;
         animator.TriggerParry();
     }
 
@@ -195,6 +240,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         if (IsDashing) return;                        // gia' in schivata: resta in coda
+        if (!CanAct) return;                          // in aria o in atterraggio: resta in coda
         if (moveInput.sqrMagnitude <= 0.01f) return;  // manca la direzione: aspetta
 
         // La schivata esiste solo agganciati: fuori lock non c'e' un bersaglio
@@ -234,6 +280,20 @@ public class PlayerMovement : MonoBehaviour
             dir = forward ? PlayerAnimator.DashDirection.Front : PlayerAnimator.DashDirection.Back;
         }
 
+        // Con il sistema nuovo la schivata e' una mossa del Moveset: il root motion lo
+        // applica OnAnimatorMove, nel riferimento congelato alla partenza.
+        if (UsesActions)
+        {
+            combatInput.Dodge(dir switch
+            {
+                PlayerAnimator.DashDirection.Left  => DodgeDirection.Left,
+                PlayerAnimator.DashDirection.Right => DodgeDirection.Right,
+                PlayerAnimator.DashDirection.Front => DodgeDirection.Forward,
+                _                                  => DodgeDirection.Back,
+            });
+            return;
+        }
+
         // Niente rotazione: le clip di scatto sono animate come spostamenti rispetto
         // a chi guarda avanti, e girare il player le farebbe leggere di traverso.
         // Sotto lock resta comunque rivolto al nemico.
@@ -244,10 +304,18 @@ public class PlayerMovement : MonoBehaviour
         dashTimeRemaining = dashDuration;
     }
 
-    private void OnElevating()
-    {
-        elevatePlayer = true;
-    }
+    // Si puo' attaccare, parare e schivare: non in aria, non durante la spinta, e
+    // all'atterraggio solo dal cancel di Jump_Land in poi.
+    public bool CanAct => jumpPhase == JumpPhase.None
+                          || (jumpPhase == JumpPhase.Land && jumpPhaseTime >= LandCancelTime);
+
+    private bool LandLocked => jumpPhase == JumpPhase.Land && jumpPhaseTime < LandCancelTime;
+
+    private float LiftoffTime => jumpStartMove != null && jumpStartMove.liftoffFrame >= 0f
+        ? jumpStartMove.FrameToTime(jumpStartMove.liftoffFrame) : 0f;
+    private float LandCancelTime => jumpLandMove != null && jumpLandMove.cancelFrame >= 0f
+        ? jumpLandMove.FrameToTime(jumpLandMove.cancelFrame) : 0f;
+    private float LandEndTime => jumpLandMove != null ? jumpLandMove.DurationAt() : 0f;
 
     private void Update()
     {
@@ -258,30 +326,88 @@ public class PlayerMovement : MonoBehaviour
         HandleMovement();
     }
 
+    // Salto in tre parti (Jump_Start, Jump_Air, Jump_Land). La spinta parte al marker
+    // liftoff, non alla pressione: fino a li' i piedi sono a terra. Anche una caduta senza
+    // salto, oltre fallGraceTime, passa da Jump_Air e atterra con Jump_Land.
     private void HandleGravityAndJump()
     {
         if (jumpRequested && Time.time - jumpRequestTime > jumpBufferTime)
             jumpRequested = false;
 
-        if (controller.isGrounded)
+        bool grounded = controller.isGrounded;
+        airTime = grounded ? 0f : airTime + Time.deltaTime;
+        jumpPhaseTime += Time.deltaTime;
+
+        if (grounded && velocity.y < 0f)
+            velocity.y = -2f;
+
+        switch (jumpPhase)
         {
-            if (velocity.y < 0f)
-                velocity.y = -2f;
+            case JumpPhase.None:
+                if (grounded && jumpRequested && CanStartJump())
+                    StartJump();
+                else if (!grounded && airTime > fallGraceTime)
+                    EnterAir();
+                break;
 
-            if (jumpRequested)
-            {
-                animator.TriggerJump();
-                jumpRequested = false;
-            }
+            case JumpPhase.Start:
+                if (jumpPhaseTime >= LiftoffTime)
+                {
+                    velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                    EnterAir();
+                }
+                break;
 
-            if (elevatePlayer)
-            {
-                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-                elevatePlayer = false;
-            }
+            case JumpPhase.Air:
+                // in salita isGrounded puo' restare vero per il primo frame dopo la spinta
+                if (grounded && velocity.y <= 0f)
+                    SetJumpPhase(JumpPhase.Land);
+                break;
+
+            case JumpPhase.Land:
+                if (jumpPhaseTime < LandCancelTime) break;
+                if (jumpRequested && CanStartJump())
+                {
+                    StartJump();
+                    break;
+                }
+                // dal cancel il movimento interrompe la clip; senza input finisce da sola
+                if (moveInput.sqrMagnitude > 0.01f)
+                {
+                    animator.TriggerLandCancel();
+                    SetJumpPhase(JumpPhase.None);
+                }
+                else if (jumpPhaseTime >= LandEndTime)
+                    SetJumpPhase(JumpPhase.None);
+                break;
         }
 
         velocity.y += gravity * Time.deltaTime;
+    }
+
+    // Non durante una mossa, uno scatto o un attacco del sistema vecchio
+    private bool CanStartJump()
+    {
+        if (IsDashing) return false;
+        if (actionPlayer != null && actionPlayer.IsPlaying) return false;
+        if (combatActor != null && combatActor.IsBusy) return false;
+        return animator == null || !animator.IsCommittedToAttack;
+    }
+
+    private void StartJump()
+    {
+        jumpRequested = false;
+        animator.TriggerJump();
+        SetJumpPhase(JumpPhase.Start);
+    }
+
+    private void EnterAir() => SetJumpPhase(JumpPhase.Air);
+
+    private void SetJumpPhase(JumpPhase phase)
+    {
+        jumpPhase = phase;
+        jumpPhaseTime = 0f;
+        animator.SetGrounded(phase != JumpPhase.Air);
     }
 
     private void HandleMovement()
@@ -307,7 +433,35 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        // Atterraggio: fermi fino al cancel di Jump_Land, poi il movimento la interrompe
+        if (LandLocked)
+        {
+            controller.Move(velocity * Time.deltaTime);
+            return;
+        }
+
         bool locked = TargetLockSystem.Instance != null && TargetLockSystem.Instance.IsLocked;
+
+        // Il proprio colpo e' un impegno: finche' dura non ci si sposta. Restano
+        // la gravita' e, da agganciati, la rotazione verso il bersaglio — senza
+        // quella un nemico che si sposta di poco farebbe mancare un colpo gia'
+        // partito. Lo scatto invece passa sopra a questo blocco (sta piu' in
+        // alto): annullare l'attacco con una schivata resta possibile.
+        // Anche una mossa del sistema nuovo (CombatActor) e' un impegno, comprese la
+        // recovery a vuoto della parata e la reazione al colpo. Il suo spostamento, se
+        // c'e', lo portano il lunge (MoveBy) e il root motion (OnAnimatorMove).
+        // L'avanzamento agganciato di oggi resta solo per i colpi SENZA lunge (tutti
+        // quelli migrati con le clip vecchie): con il lunge i due si sommerebbero.
+        bool inAction = (actionPlayer != null && actionPlayer.IsPlaying) || (combatActor != null && combatActor.IsBusy);
+        if ((animator != null && animator.IsCommittedToAttack) || inAction)
+        {
+            if (locked) FaceLockTarget();
+            bool attackWithoutLunge = combatActor != null && combatActor.Current == CombatActor.State.Attack
+                                      && (combatActor.CurrentMove == null || combatActor.CurrentMove.lungeDistance <= 0f);
+            Vector3 advance = !inAction || attackWithoutLunge ? AttackAdvance(locked) : Vector3.zero;
+            controller.Move((advance + velocity) * Time.deltaTime);
+            return;
+        }
 
         if (locked)
         {
@@ -344,6 +498,33 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // Avanzamento durante il proprio colpo. Ogni colpo andato a segno spinge via
+    // il bersaglio, e da quando il movimento e' bloccato in attacco il player non
+    // ha piu' modo di recuperare quei centimetri: dopo due o tre colpi il nemico e'
+    // fuori portata e la combo muore da sola. E' lo stesso accorgimento che usa il
+    // simp, che avanza mentre concatena (vedi AttackPlayer.Striking).
+    //
+    // Non riapre il movimento libero: punta solo al bersaglio agganciato, si ferma
+    // a distanza di colpo e non supera mai quella soglia in un frame.
+    private Vector3 AttackAdvance(bool locked)
+    {
+        if (!locked || attackAdvanceSpeed <= 0f) return Vector3.zero;
+
+        Transform target = TargetLockSystem.Instance.LockedTarget;
+        if (target == null) return Vector3.zero;
+
+        Vector3 toTarget = target.position - transform.position;
+        toTarget.y = 0f;
+
+        float gap = toTarget.magnitude - attackAdvanceMinDistance;
+        if (gap <= 0f) return Vector3.zero;
+
+        // il passo non deve mai scavalcare la soglia: senza il clamp, a frame
+        // lunghi il player finirebbe addosso al nemico invece che a tiro
+        float speed = Mathf.Min(attackAdvanceSpeed, gap / Mathf.Max(Time.deltaTime, 0.0001f));
+        return toTarget.normalized * speed;
+    }
+
     private void FaceLockTarget()
     {
         Transform lockTarget = TargetLockSystem.Instance.LockedTarget;
@@ -374,7 +555,7 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        float speed = MoveSpeed(walkSpeed);
+        float speed = MoveSpeed(lockMoveSpeed);
 
         // Forward = verso il nemico, right = perpendicolare
         Vector3 forward = toEnemy.normalized;
@@ -394,6 +575,25 @@ public class PlayerMovement : MonoBehaviour
     // sorprese se un domani qualche clip venisse riesportata con la radice sbloccata.
     private void OnAnimatorMove()
     {
+        // Root motion di una mossa dell'ActionPlayer: stesso trattamento dello scatto,
+        // sul piano, nel riferimento congelato all'inizio della mossa (girandosi verso il
+        // bersaglio la traiettoria non si incurva) e attraverso il CharacterController.
+        if (actionPlayer != null && actionPlayer.WantsRootMotion && anim != null)
+        {
+            if (rootMotionMove != actionPlayer.Current)
+            {
+                rootMotionMove = actionPlayer.Current;
+                rootMotionFrame = transform.rotation;
+            }
+
+            Vector3 actionDelta = anim.deltaPosition;
+            actionDelta.y = 0f;
+            Vector3 actionLocal = Quaternion.Inverse(transform.rotation) * actionDelta;
+            controller.Move(rootMotionFrame * actionLocal * actionPlayer.RootMotionScale);
+            return;
+        }
+        rootMotionMove = null;
+
         if (!useRootMotionForDash || !IsDashing || anim == null) return;
 
         Vector3 delta = anim.deltaPosition;
@@ -411,9 +611,13 @@ public class PlayerMovement : MonoBehaviour
         controller.Move(straight * dashRootMotionScale);
     }
 
-    // Velocita' di camminata in sola lettura: e' anche il tetto a cui si fermano
-    // le andature analogiche quando si e' agganciati.
+    // Il lunge del CombatActor: passa dal CharacterController, cosi' rispetta le collisioni.
+    public void MoveBy(Vector3 delta) => controller.Move(delta);
+
+    // Velocita' di gioco in sola lettura: PlayerAnimator ci mette le soglie del blend
+    // Walk/Run e ne ricava la velocita' di riproduzione delle clip.
     public float WalkSpeed => walkSpeed;
+    public float SprintSpeed => sprintSpeed;
 
     public float GetSpeed()
     {

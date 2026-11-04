@@ -5,6 +5,8 @@ public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float hitStunDuration = 0.75f;
+    [Tooltip("Se falso, il GameObject NON viene disattivato a fine animazione di morte: resta un cadavere attivo in scena (Collider e Animator fermi sull'ultimo frame di Death). Usato dalle guardie di Vana, il cui cadavere deve restare bersaglio valido per la necromanzia finché non viene rievocato o la bossfight finisce. Tutto il resto del gioco lo lascia a true (comportamento invariato).")]
+    [SerializeField] private bool despawnOnDeath = true;
 
     public float CurrentHealth { get; private set; }
     public float MaxHealth => maxHealth;
@@ -37,6 +39,13 @@ public class Health : MonoBehaviour
     // che deve richiamare un nuovo simp) a fare polling su IsDead ogni frame.
     public event System.Action OnDeath;
 
+    // Un colpo e' stato parato (TakeDamage ha trovato IsBlocking). Serve a chi gestisce la
+    // parata per distinguere quella riuscita da quella a vuoto.
+    public event System.Action OnParried;
+
+    // Stagger appena partito; l'argomento dice se viene da una parata subita.
+    public event System.Action<bool> OnStaggered;
+
     // Istante dell'ultimo colpo incassato (anche se parato). Serve all'IA per
     // ingaggiare chi la colpisce alle spalle, fuori dal cono visivo.
     public float LastDamagedTime { get; private set; } = -999f;
@@ -45,6 +54,12 @@ public class Health : MonoBehaviour
     // interrotto. Non e' cachato in Awake perche' i CombatState vengono aggiunti a
     // runtime dagli animator, e l'ordine degli Awake non e' garantito.
     public bool IsArmored => TryGetComponent(out CombatState combat) && combat.IsArmored;
+
+    // Serve solo a scegliere il colore del numero di danno. Non cachato: il
+    // PlayerManager puo' non esistere ancora quando questo componente si sveglia,
+    // e i colpi sono abbastanza radi da non farne un problema.
+    private bool IsPlayer =>
+        PlayerManager.Instance != null && PlayerManager.Instance.PlayerTransform == transform;
 
     private float stunnedUntil = -1f;
     private bool stunnedFromParry;
@@ -96,19 +111,33 @@ public class Health : MonoBehaviour
         // ti sta attaccando, ed e' un buon motivo per girarti
         LastDamagedTime = Time.time;
 
-        if (IsBlocking) return true;
+        if (IsBlocking)
+        {
+            OnParried?.Invoke();
+            return true;
+        }
 
         // Esecuzione: chi e' ancora stordito da una parata riuscita muore al colpo
         // successivo, qualunque sia il danno dell'arma. E' quello che rende la parata
         // la lettura piu' forte del gioco invece di un semplice "annulla il colpo".
         if (IsVulnerableToExecution)
         {
+            // il numero mostrato e' la vita che l'esecuzione porta via davvero,
+            // non il danno dell'arma: l'esecuzione ignora quest'ultimo
+            DamagePopup.Show(transform.position, CurrentHealth, DamagePopup.executionColor, 1.6f);
             CurrentHealth = 0f;
             Die();
             return false;
         }
 
+        float before = CurrentHealth;
         CurrentHealth = Mathf.Max(CurrentHealth - amount, 0f);
+
+        // Il numero viene da qui e non dalla Hitbox di proposito: cosi' compare
+        // per QUALUNQUE sorgente di danno, proiettili di Vana e slam radiale
+        // compresi, che passano di qui ma non da nessuna hitbox.
+        DamagePopup.Show(transform.position, before - CurrentHealth,
+                         IsPlayer ? DamagePopup.playerHurtColor : DamagePopup.enemyHitColor);
 
         if (CurrentHealth <= 0f)
             Die();
@@ -130,6 +159,7 @@ public class Health : MonoBehaviour
         stunnedUntil = Time.time + hitStunDuration;
         stunnedFromParry = fromParry;
         animator?.SetTrigger(TakeHitHash);
+        OnStaggered?.Invoke(fromParry);
     }
 
     private void Die()
@@ -137,6 +167,14 @@ public class Health : MonoBehaviour
         IsDead = true;
         IsInvincible = true;
         OnDeath?.Invoke();
+
+        // La barra vita non si nasconde mai da sola: oggi spariva solo perche'
+        // il genitore veniva disattivato a fine animazione. Con
+        // despawnOnDeath=false (guardie di Vana) quel SetActive(false) non
+        // arriva piu', e senza questa riga un cadavere lascerebbe una barra a
+        // 0 fluttuante per sempre.
+        var healthBar = GetComponentInChildren<EnemyHealthBar>();
+        if (healthBar != null) healthBar.gameObject.SetActive(false);
 
         var movement = GetComponent<PlayerMovement>();
         if (movement != null) movement.enabled = false;
@@ -150,9 +188,10 @@ public class Health : MonoBehaviour
         if (animator != null)
         {
             animator.SetTrigger(DeathHash);
-            StartCoroutine(DespawnAfterDeathAnimation());
+            if (despawnOnDeath)
+                StartCoroutine(DespawnAfterDeathAnimation());
         }
-        else
+        else if (despawnOnDeath)
         {
             gameObject.SetActive(false);
         }

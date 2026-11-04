@@ -470,7 +470,7 @@
             "bindingGroup": "Pad",
             "devices": [
                 {
-                    "devicePath": "<DualShockGamepad>",
+                    "devicePath": "<Gamepad>",
                     "isOptional": false,
                     "isOR": false
                 }

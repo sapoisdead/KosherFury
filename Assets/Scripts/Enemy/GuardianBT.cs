@@ -24,6 +24,8 @@ public class GuardianBT : BehaviourTreeBase
     [SerializeField] private float attackRangeWhileGuarding = 1.15f;
     [Tooltip("Entro quanto dal proprio slot si considera arrivata.")]
     [SerializeField] private float arriveDistance = 0.15f;
+    [Tooltip("Di quanto puo' scostarsi dal proprio slot prima di tornarci. Deve restare ben sopra arriveDistance: la fascia morta fra le due soglie e' quello che impedisce alla guardia di oscillare dentro e fuori dalla posizione, camminando sul posto.")]
+    [SerializeField] private float returnDistance = 0.4f;
     [Tooltip("Velocita' di rotazione (gradi/secondo) mentre guarda il player mantenendo la formazione.")]
     [SerializeField] private float turnSpeed = 480f;
     [Tooltip("Velocita' durante la corsa verso il proprio posto e mentre fa da bloccante.")]
@@ -130,7 +132,8 @@ public class GuardianBT : BehaviourTreeBase
         return new Selector(new List<Node>
         {
             new GuardDuty(this, agent, transform, player, enemyAnimator, combatState,
-                          attackRangeWhileGuarding, arriveDistance, turnSpeed, moveSpeedWhileGuarding),
+                          attackRangeWhileGuarding, arriveDistance, returnDistance,
+                          turnSpeed, moveSpeedWhileGuarding),
 
             new Sequence(new List<Node>
             {

@@ -41,10 +41,20 @@ public class Hitbox : MonoBehaviour
     [Tooltip("Durata REALE (non scalata) del rallentamento su esecuzione.")]
     [SerializeField] private float executionSlowMoDuration = 0.2f;
 
-    [Tooltip("Spinta impressa al bersaglio, in m/s. 0 per non spingere.")]
+    [Tooltip("Spinta impressa al bersaglio, in m/s. 0 per non spingere. La distanza percorsa e' forza^2/(2*decay), con decay 9 sul componente Knockback: a 1.5 fa 12.5 cm. Tenerla bassa, o il bersaglio esce di portata e le combo non si concatenano.")]
     [SerializeField] private float knockback = 3.5f;
     [Tooltip("Spinta impressa a CHI ATTACCA quando il colpo viene parato: e' la parata che lo respinge.")]
     [SerializeField] private float knockbackOnParry = 4.5f;
+
+    // La reazione del rig e' SEPARATA dalla spinta: erano lo stesso numero, quindi
+    // abbassare il knockback per far concatenare le combo smorzava anche l'impatto
+    // visivo, e il colpo diventava molle. Cosi' si puo' spingere poco e scomporre
+    // molto, che e' il modo in cui un colpo si sente forte senza spostare il
+    // bersaglio fuori portata.
+    [Tooltip("Forza passata a HitImpactReaction, cioe' quanto il colpo SCOMPONE il rig del bersaglio. Indipendente dalla spinta: e' l'impatto che si vede, non quello che sposta. I gradi effettivi li decide il bersaglio (degreesPerForce e maxDegrees sul suo HitImpactReaction).")]
+    [SerializeField] private float impactReaction = 2.5f;
+    [Tooltip("Come impactReaction, ma per il colpo parato: e' chi ha attaccato a incassare la scomposizione.")]
+    [SerializeField] private float impactReactionOnParry = 4f;
 
     [Header("Debug")]
     [Tooltip("Solo per il disegno del gizmo: non influisce sui controlli.")]
@@ -55,6 +65,13 @@ public class Hitbox : MonoBehaviour
 
     private bool active;
     private float damage;
+
+    // Mossa che ha aperto la finestra in corso. Se c'e', i valori del colpo normale
+    // (congelamento, scuotimento, spinta, reazione del rig) vengono da li' invece che
+    // dai campi serializzati: e' cosi' che la stessa hitbox distingue un jab da un
+    // calcio. Null = valori serializzati, che e' il caso dei nemici non migrati.
+    // Parata ed esecuzione restano sempre sulla hitbox.
+    private MoveData move;
     private Vector3 lastCenter;
     private bool hasLastCenter;
     private Health ownerHealth;
@@ -91,9 +108,12 @@ public class Hitbox : MonoBehaviour
 
     // Apre la finestra di colpo. Il danno lo decide chi chiama (arma equipaggiata,
     // dati del nemico, ecc.): la hitbox resta ignara di cosa la sta usando.
-    public void Activate(float damage)
+    public void Activate(float damage) => Activate(damage, null);
+
+    public void Activate(float damage, MoveData move)
     {
         this.damage = damage;
+        this.move = move;
         hitThisSwing.Clear();
         active = true;
         hasLastCenter = false;
@@ -249,19 +269,33 @@ public class Hitbox : MonoBehaviour
         // esecuzione (stordito SPECIFICAMENTE da una parata, non da una reazione
         // da colpo normale), questo colpo lo uccide sul colpo (vedi Health.TakeDamage).
         bool isExecution = health.IsVulnerableToExecution && !health.IsBlocking;
+        // TakeDamage ritorna false sia quando il danno passa sia quando viene
+        // ignorato (morto, invincibile): per la catena serve sapere se il colpo
+        // ha davvero toccato qualcuno, e questo si puo' solo guardare PRIMA.
+        bool victimWasHittable = !health.IsDead && !health.IsInvincible;
+
         bool wasParried = health.TakeDamage(damage);
         if (wasParried)
             OwnerHealth?.Stagger(fromParry: true);
 
-        float appliedHitStop = wasParried ? hitStopOnParry : (isExecution ? hitStopOnExecution : hitStop);
+        // La catena avanza sia colpendo sia parando: la parata e' una lettura, non
+        // una pausa, quindi difendersi bene non deve azzerare quello che si e'
+        // costruito attaccando.
+        if (IsPlayer(OwnerRoot) && victimWasHittable && !wasParried)
+            ComboCounter.Register();
+        else if (wasParried && IsPlayer(health.transform))
+            ComboCounter.Register();
+
+        float appliedHitStop = wasParried ? hitStopOnParry : (isExecution ? hitStopOnExecution : HitStopValue);
         HitStop.Freeze(OwnerRoot.gameObject, health.gameObject, appliedHitStop);
 
         // Solo se c'e' di mezzo il player: due nemici che si colpiscono lontano dalla
         // camera non devono muovere l'inquadratura.
         if (InvolvesPlayer(health))
         {
-            float appliedShake = wasParried ? cameraShakeOnParry : (isExecution ? cameraShakeOnExecution : cameraShake);
+            float appliedShake = wasParried ? cameraShakeOnParry : (isExecution ? cameraShakeOnExecution : CameraShakeValue);
             CameraShake.Add(appliedShake);
+            GamepadRumble.Add(appliedShake, appliedShake * 0.5f);
 
             if (isExecution)
                 ExecutionSlowMo.Trigger(executionSlowMoScale, executionSlowMoDuration);
@@ -287,14 +321,29 @@ public class Hitbox : MonoBehaviour
         // spostato il contenitore 'Simps' con dentro tutte le guardie.
         Transform pushed = wasParried ? attacker : victim.transform;
         Transform origin = wasParried ? victim.transform : attacker;
-        float force = wasParried ? knockbackOnParry : knockback;
+        float force = wasParried ? knockbackOnParry : KnockbackValue;
 
         if (force <= 0f || pushed == null || origin == null) return;
 
-        var kb = pushed.GetComponentInChildren<Knockback>();
-        if (kb == null) return;
+        Vector3 direction = pushed.position - origin.position;
 
-        kb.Apply(pushed.position - origin.position, force);
+        // entrambi opzionali: se il personaggio non ha uno dei due componenti,
+        // semplicemente quella parte della reazione non succede
+        pushed.GetComponentInChildren<Knockback>()?.Apply(direction, force);
+        pushed.GetComponentInChildren<HitImpactReaction>()?.Kick(
+            direction, wasParried ? impactReactionOnParry : ImpactReactionValue);
+    }
+
+    // Valori del colpo normale: dalla mossa in corso se c'e', altrimenti i serializzati
+    private float HitStopValue        => move != null ? move.hitStop        : hitStop;
+    private float CameraShakeValue    => move != null ? move.cameraShake    : cameraShake;
+    private float KnockbackValue      => move != null ? move.knockback      : knockback;
+    private float ImpactReactionValue => move != null ? move.impactReaction : impactReaction;
+
+    private static bool IsPlayer(Transform t)
+    {
+        if (t == null || PlayerManager.Instance == null) return false;
+        return PlayerManager.Instance.PlayerTransform == t;
     }
 
     private bool InvolvesPlayer(Health victim)

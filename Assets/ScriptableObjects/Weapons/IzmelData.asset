@@ -19,3 +19,4 @@ MonoBehaviour:
   damage: 25
   iconSprite: {fileID: 21300000, guid: 2ca4ae5b5bd1c4a55986ff3ab285088d, type: 3}
   isFists: 0
+  moveset: {fileID: 11400000, guid: 9a9a07d9ba8834287978d6bdf69550fc, type: 2}

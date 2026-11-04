@@ -18,8 +18,12 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private float parryMaxWindow = 0.8f;
     [Tooltip("Quanto velocemente si passa da postura pacifica a combat.")]
     [SerializeField] private float stanceBlendSpeed = 6f;
-    [Tooltip("Velocita' in m/s a cui e' tarata la clip di camminata: e' la SOGLIA DEL BLEND TREE (4.8), non la velocita' del player, che puo' essere diversa. Sotto questo valore la riproduzione rallenta in proporzione per non far slittare i piedi.")]
-    [SerializeField] private float walkClipSpeed = 4.8f;
+    [Tooltip("Velocita' nativa della clip di camminata libera (Walk), in m/s: quella a cui il piede a terra non scivola. E' una proprieta' della clip: la velocita' di gioco e' walkSpeed su PlayerMovement, e la clip viene accelerata o rallentata per seguirla.")]
+    [SerializeField] private float walkClipSpeed = 1.2f;
+    [Tooltip("Velocita' nativa della clip di corsa (Run), in m/s. Proprieta' della clip, come walkClipSpeed: la velocita' di gioco e' sprintSpeed su PlayerMovement.")]
+    [SerializeField] private float runClipSpeed = 5f;
+    [Tooltip("Velocita' nativa della locomozione agganciata (blend tree Locomotion, strafe), in m/s. Le clip vecchie sono tarate su 4.8; gli strafe nuovi (Sword_Guard_Walk_F/B/L/R) saranno a 0.8.")]
+    [SerializeField] private float guardClipSpeed = 4.8f;
     [Tooltip("Ritmo minimo di riproduzione della locomozione, sotto la velocita' di camminata. A zero il passo si congelerebbe alle andature lentissime: meglio un filo di scivolamento che un personaggio che avanza al rallentatore.")]
     [SerializeField] private float minLocomotionPlaybackRate = 0.35f;
 
@@ -41,7 +45,11 @@ public class PlayerAnimator : MonoBehaviour
     private static readonly int StanceHash = Animator.StringToHash("Stance");
     private static readonly int IsLockedHash = Animator.StringToHash("IsLocked");
     private static readonly int JumpHash = Animator.StringToHash("Jump");
+    private static readonly int GroundedHash = Animator.StringToHash("Grounded");
+    private static readonly int LandCancelHash = Animator.StringToHash("LandCancel");
     private static readonly int SpeedMultiplierHash = Animator.StringToHash("SpeedMultiplier");
+    private static readonly int GuardSpeedMultiplierHash = Animator.StringToHash("GuardSpeedMultiplier");
+    private static readonly int LocomotionBlendHash = Animator.StringToHash("LocomotionBlend");
 
     // Layer "Weapon_Overlay": mascherato su busto/braccia, sovrascrive la posa a mani
     // nude con quella da spada. Indice 1 perche' e' il secondo layer del controller,
@@ -122,13 +130,24 @@ public class PlayerAnimator : MonoBehaviour
         Animator.StringToHash("Dash_Back"),
     };
 
+    // Vero da quando il colpo e' deciso a quando l'animazione e' finita, fusione
+    // iniziale compresa. CombatState da solo non basta: fra il trigger e
+    // l'ingresso nello stato l'Animator e' ancora nello stato precedente, quindi
+    // IsAttacking resta falso per tutta la transizione (~0.1s) e in quella
+    // finestra il player scivolerebbe ancora.
+    public bool IsCommittedToAttack =>
+        (combatState != null && combatState.IsAttacking) || comboAdvancePending || slashComboAdvancePending;
+
     private int slashComboStep;
     private float lastSlashTime;
+    private float bufferedSlashTime = -1f;
     private bool slashQueued;
     private bool slashComboAdvancePending;
     private int pendingSlashStateHash;
     private WeaponManager weaponManager;
     private Knockback knockback;
+    private ActionPlayer actionPlayer;
+    private CombatActor combatActor;
 
     // postura: 0 = combat (a mani nude), 1 = con l'arma in pugno.
     // La postura pacifica e' stata rimossa: il player e' sempre in guardia.
@@ -147,6 +166,8 @@ public class PlayerAnimator : MonoBehaviour
 
         weaponManager = GetComponent<WeaponManager>();
         knockback = GetComponent<Knockback>();
+        actionPlayer = GetComponent<ActionPlayer>();
+        combatActor = GetComponent<CombatActor>();
 
         foreach (var hb in GetComponentsInChildren<Hitbox>(true))
         {
@@ -160,26 +181,43 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
-    // Con lo stick la velocita' e' continua, ma le clip di locomozione no: sotto la
-    // soglia di camminata il blend tree mescola idle e camminata e la clip continua a
-    // girare al proprio ritmo, quindi i piedi slittano. Rallentando la riproduzione in
-    // proporzione alla velocita' reale il passo torna attaccato a terra.
-    //
-    // Sopra quella soglia il moltiplicatore resta 1: li' ci pensano gia' le soglie del
-    // blend tree, che sono in m/s veri, a tenere insieme passo e spostamento.
-    //
-    // Il riferimento e' la soglia del blend tree, NON walkSpeed del player: sono due
-    // numeri diversi (4.8 contro 2.5 sul prefab) e usare il secondo terrebbe il passo
-    // a ritmo pieno proprio dove la clip sta gia' correndo piu' del personaggio.
-    //
-    // Il valore va sugli stati di locomozione (vedi il parametro SpeedMultiplier nel
-    // controller), non sull'Animator intero: moltiplicare tutto rallenterebbe anche
-    // pugni e parate.
-    private float LocomotionPlaybackRate()
+    // Locomozione libera: il blend Walk/Run e' sulle velocita' DI GIOCO, non su quelle
+    // native delle clip. LocomotionBlend vale 0 a walkSpeed (Walk pura) e 1 a sprintSpeed
+    // (Run pura), e le soglie del blend tree sono 0 e 1: cambiando walkSpeed o sprintSpeed
+    // dall'Inspector la camminata resta Walk pura e la corsa Run pura, senza toccare il
+    // controller.
+    private float LocomotionBlend()
     {
-        if (walkClipSpeed <= 0f || currentSpeed >= walkClipSpeed) return 1f;
+        if (playerMovement == null) return 0f;
+        float walk = playerMovement.WalkSpeed, run = playerMovement.SprintSpeed;
+        return run > walk ? Mathf.Clamp01((currentSpeed - walk) / (run - walk)) : 0f;
+    }
 
-        return Mathf.Max(currentSpeed / walkClipSpeed, minLocomotionPlaybackRate);
+    // Velocita' di riproduzione della locomozione libera = velocita' reale / velocita'
+    // nativa di quello che sta suonando, cosi' il piede a terra non scivola.
+    //   - sotto walkSpeed: Walk pura, rallentata (fino a minLocomotionPlaybackRate, o il
+    //     passo si congelerebbe);
+    //   - fra walkSpeed e sprintSpeed: la velocita' nativa del blend e' quella delle due
+    //     clip pesata come il blend, quindi agli estremi vale walkSpeed / walkClipSpeed e
+    //     sprintSpeed / runClipSpeed;
+    //   - sopra sprintSpeed: Run pura, accelerata senza tetto.
+    //
+    // Il valore va sugli stati di locomozione (parametro SpeedMultiplier nel controller),
+    // non sull'Animator intero: moltiplicare tutto rallenterebbe anche colpi e parate.
+    private float LocomotionPlaybackRate(float blend)
+    {
+        if (walkClipSpeed <= 0f || runClipSpeed <= 0f) return 1f;
+        if (playerMovement == null || currentSpeed <= playerMovement.WalkSpeed)
+            return Mathf.Max(currentSpeed / walkClipSpeed, minLocomotionPlaybackRate);
+        return currentSpeed / Mathf.Lerp(walkClipSpeed, runClipSpeed, blend);
+    }
+
+    // Lo stesso per la locomozione agganciata (parametro GuardSpeedMultiplier), che ha una
+    // sola velocita' nativa: col lock la velocita' massima e' quella degli strafe.
+    private float GuardPlaybackRate()
+    {
+        if (guardClipSpeed <= 0f) return 1f;
+        return Mathf.Max(currentSpeed / guardClipSpeed, minLocomotionPlaybackRate);
     }
 
     private void Update()
@@ -201,7 +239,10 @@ public class PlayerAnimator : MonoBehaviour
         );
 
         animator.SetFloat(SpeedHash, currentSpeed);
-        animator.SetFloat(SpeedMultiplierHash, LocomotionPlaybackRate());
+        float blend = LocomotionBlend();
+        animator.SetFloat(LocomotionBlendHash, blend);
+        animator.SetFloat(SpeedMultiplierHash, LocomotionPlaybackRate(blend));
+        animator.SetFloat(GuardSpeedMultiplierHash, GuardPlaybackRate());
 
         // Direzione di movimento RELATIVA a dove guarda il player. Serve sotto lock,
         // dove si resta rivolti al nemico e ci si sposta di lato o all'indietro: il
@@ -244,8 +285,16 @@ public class PlayerAnimator : MonoBehaviour
         // lo scatto ha fotogrammi di invulnerabilita': e' una schivata, se non
         // evitasse niente non sarebbe una scelta
         bool inDashState = IsInAnyState(currentState.shortNameHash, DashStates);
+        bool inAreaSlashState = currentState.shortNameHash == AreaSlashStateHash;
         // Fase dell'attacco in corso, letta dagli animation event delle hitbox.
-        combatState.UpdatePhase(inPunchState || inSlashState, currentState.shortNameHash);
+        // Area_Slash e' incluso: ha i propri OnWeaponStart/OnWeaponEnd come gli
+        // altri colpi, quindi ne segue le tre fasi. Restandone fuori era l'unico
+        // attacco senza armor sui frame attivi e senza recovery punibile — cioe'
+        // l'unico che i nemici non potevano leggere.
+        // Durante una mossa del sistema nuovo (ActionPlayer) la fase la governa lui: il
+        // controller sotto e' fermo in idle e la azzererebbe a ogni frame.
+        if (actionPlayer == null || !actionPlayer.OwnsCombatState)
+            combatState.UpdatePhase(inPunchState || inSlashState || inAreaSlashState, currentState.shortNameHash);
 
         // Rete di sicurezza per la parata: la chiude di norma OnParryEnd (animation
         // event su Hand_parry/Sword_parry), ma se l'animazione viene interrotta
@@ -254,12 +303,13 @@ public class PlayerAnimator : MonoBehaviour
         // resterebbe 'in parata' a oltranza.
         if (parryActive)
         {
-            bool canceledIntoAction = inPunchState || inSlashState || inHitState || inDashState;
+            bool canceledIntoAction = inPunchState || inSlashState || inAreaSlashState || inHitState || inDashState;
             bool timedOut = Time.time - parryCommandTime >= parryMaxWindow;
             if (canceledIntoAction || timedOut) EndParry();
         }
 
-        if (health != null)
+        // Durante parata e schivata del sistema nuovo i flag li governa CombatActor
+        if (health != null && (combatActor == null || !combatActor.OwnsHealthFlags))
         {
             // Attaccare NON rende piu' invulnerabili: la protezione durante il colpo
             // e' ora limitata ai soli frame attivi (CombatState.IsArmored), dove si
@@ -273,6 +323,8 @@ public class PlayerAnimator : MonoBehaviour
 
         if (slashComboAdvancePending && currentState.shortNameHash == pendingSlashStateHash)
             slashComboAdvancePending = false;
+
+        ConsumeSlashBuffer();
 
         if (slashQueued && !slashComboAdvancePending && !animator.IsInTransition(0))
         {
@@ -317,10 +369,18 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
+    // Salto in tre parti: Jump_Start (trigger Jump), Jump_Air in loop finche' Grounded e'
+    // falso, Jump_Land al ritorno a terra. I tempi (spinta, cancel) li tiene PlayerMovement.
     public void TriggerJump()
     {
+        animator.ResetTrigger(LandCancelHash);
         animator.SetTrigger(JumpHash);
     }
+
+    public void SetGrounded(bool grounded) => animator.SetBool(GroundedHash, grounded);
+
+    // Interrompe Jump_Land verso la locomozione: da chiamare dal cancel in poi
+    public void TriggerLandCancel() => animator.SetTrigger(LandCancelHash);
 
     // Scatto: la schivata rapida usata sotto lock, al posto della capriola.
     public void TriggerDash(DashDirection direction)
@@ -428,7 +488,14 @@ public class PlayerAnimator : MonoBehaviour
             bufferedPunchTime = -1f;
             FirePunch();
         }
-        else if (!comboAdvancePending)
+        // La concatenazione si accetta SOLO in recovery, cioe' a colpo gia' speso.
+        // Prima bastava premere in un momento qualsiasi del colpo in corso e il
+        // successivo era ormai deciso: bastava pigiare per incatenare l'intera
+        // combo senza piu' poter cambiare idea. Il comando dato troppo presto non
+        // viene scartato qui, resta nel buffer: se la finestra si apre entro
+        // inputBufferTime parte lo stesso, altrimenti scade da solo. Cosi' un
+        // anticipo di un istante perdona, ma lo spam non impegna piu' a niente.
+        else if (!comboAdvancePending && combatState.IsPunishable)
         {
             bufferedPunchTime = -1f;
             punchQueued = true;
@@ -439,19 +506,41 @@ public class PlayerAnimator : MonoBehaviour
 
     private void TriggerSlash()
     {
+        bufferedSlashTime = Time.time;
+        ConsumeSlashBuffer();
+    }
+
+    // Gemella di ConsumePunchBuffer: stessa struttura, stessa finestra di
+    // concatenazione in recovery. La spada aveva una coda senza scadenza, quindi
+    // un click dato durante il caricamento restava impegnato fino in fondo.
+    private void ConsumeSlashBuffer()
+    {
+        if (bufferedSlashTime < 0f) return;
+
+        if (Time.time - bufferedSlashTime > inputBufferTime)
+        {
+            bufferedSlashTime = -1f;
+            return;
+        }
+
         var state = animator.GetCurrentAnimatorStateInfo(0);
         if (state.shortNameHash == TakeHitStateHash) return;
 
         bool inSlash = IsInAnyState(state.shortNameHash, SlashStates);
 
-        // stessa logica della combo corpo a corpo
         if (!inSlash && Time.time - lastSlashTime > comboResetTime)
             slashComboStep = 0;
+
         if (!inSlash)
+        {
+            bufferedSlashTime = -1f;
             FireSlash();
-        else if (!slashComboAdvancePending)
+        }
+        else if (!slashComboAdvancePending && combatState.IsPunishable)
+        {
+            bufferedSlashTime = -1f;
             slashQueued = true;
-        // stessa logica della combo pugni: se c'e' gia' un colpo in coda non confermato, il click viene scartato
+        }
     }
 
     private static bool IsInAnyState(int hash, int[] states)
@@ -519,16 +608,19 @@ public class PlayerAnimator : MonoBehaviour
 
     // La finestra di colpo e la fase Active sono la stessa cosa vista da due lati:
     // vengono aperte e chiuse insieme, cosi' non possono divergere.
+    // Confronto esplicito con null e non '?.': l'operatore di C# ignora il controllo
+    // "oggetto distrutto" di Unity, quindi una hitbox gia' distrutta (arma cambiata
+    // a colpo in volo) passava il filtro e lanciava MissingReferenceException.
     private void OpenWindow(Hitbox hitbox, float damage)
     {
         combatState.OpenActiveWindow();
-        hitbox?.Activate(damage);
+        if (hitbox != null) hitbox.Activate(damage);
     }
 
     private void CloseWindow(Hitbox hitbox)
     {
         combatState.CloseActiveWindow();
-        hitbox?.Deactivate();
+        if (hitbox != null) hitbox.Deactivate();
     }
 
     private void FirePunch()

@@ -85,10 +85,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.18625695
-  m_Height: 0.7687743
+  m_Radius: 0.06
+  m_Height: 0.78699994
   m_Direction: 2
-  m_Center: {x: 0.01, y: 0.045704544, z: 0.640144}
+  m_Center: {x: -0.02, y: 0, z: 0.6135}
 --- !u!114 &2284978514356637518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,8 +103,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hitbox
   hitStop: 0.07
   hitStopOnParry: 0.12
+  hitStopOnExecution: 0.18
   impactVfx: {fileID: 7048249069916767513, guid: 436127c63725440069e02ed3573f9d18, type: 3}
   impactVfxLifetime: 1.5
+  cameraShake: 0.35
+  cameraShakeOnParry: 0.55
+  cameraShakeOnExecution: 0.85
+  executionSlowMoScale: 0.15
+  executionSlowMoDuration: 0.2
+  knockback: 3.5
+  knockbackOnParry: 4.5
+  impactReaction: 2.5
+  impactReactionOnParry: 4
   gizmoColor: {r: 1, g: 0.4, b: 0, a: 0.35}
 --- !u!1001 &7792748430495888696
 PrefabInstance:
